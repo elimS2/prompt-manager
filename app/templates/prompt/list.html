@@ -72,7 +72,9 @@
                                     <input class="form-check-input prompt-checkbox" 
                                            type="checkbox" 
                                            value="{{ prompt.id }}"
-                                           id="prompt-{{ prompt.id }}">
+                                           id="prompt-{{ prompt.id }}"
+                                           data-bs-toggle="tooltip" 
+                                           title="Click to copy content and select for merge">
                                     <label class="form-check-label" for="prompt-{{ prompt.id }}">
                                         <h5 class="card-title mb-0">{{ prompt.title }}</h5>
                                     </label>

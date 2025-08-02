@@ -27,11 +27,12 @@ class PromptListManager {
     }
     
     /**
-     * Initialize checkbox functionality for merge selection
+     * Initialize checkbox functionality for merge selection and copy on click
      */
     initCheckboxes() {
         this.checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => this.updateMergeButton());
+            checkbox.addEventListener('click', (e) => this.handleCheckboxClick(e));
         });
     }
     
@@ -48,6 +49,25 @@ class PromptListManager {
                 const mergeUrl = this.mergeBtn.getAttribute('data-merge-url') || '/prompts/merge';
                 window.location.href = `${mergeUrl}?ids=${ids.join('&ids=')}`;
             };
+        }
+    }
+    
+    /**
+     * Handle checkbox click to copy prompt content
+     */
+    handleCheckboxClick(event) {
+        const checkbox = event.currentTarget;
+        const card = checkbox.closest('.prompt-card');
+        const copyButton = card.querySelector('.copy-content-btn');
+        
+        if (copyButton) {
+            const content = copyButton.getAttribute('data-content');
+            if (content) {
+                // Small delay to ensure checkbox state changes first
+                setTimeout(() => {
+                    this.copyToClipboard(content, copyButton);
+                }, 50);
+            }
         }
     }
     
