@@ -13,6 +13,10 @@ class PromptListManager {
         this.archiveForms = document.querySelectorAll('.archive-form');
         this.restoreForms = document.querySelectorAll('.restore-form');
         
+        // New properties for multi-select functionality
+        this.selectedPrompts = new Set();
+        this.copyAllBtn = null;
+        
         this.init();
     }
     
@@ -24,51 +28,227 @@ class PromptListManager {
         this.initArchiveForms();
         this.initRestoreForms();
         this.initKeyboardShortcuts();
+        this.createCopyAllButton();
     }
     
     /**
-     * Initialize checkbox functionality for merge selection and copy on click
+     * Create "Copy All Selected" button
+     */
+    createCopyAllButton() {
+        const actionsBar = document.querySelector('.d-flex.justify-content-between.align-items-center');
+        if (actionsBar) {
+            const actionsDiv = actionsBar.querySelector('div');
+            if (actionsDiv) {
+                this.copyAllBtn = document.createElement('button');
+                this.copyAllBtn.className = 'btn btn-info me-2';
+                this.copyAllBtn.id = 'copyAllBtn';
+                this.copyAllBtn.disabled = true;
+                this.copyAllBtn.innerHTML = '<i class="bi bi-clipboard-plus me-1"></i>Copy Selected';
+                this.copyAllBtn.setAttribute('data-bs-toggle', 'tooltip');
+                this.copyAllBtn.setAttribute('title', 'Copy content of all selected prompts');
+                
+                this.copyAllBtn.addEventListener('click', () => this.copyAllSelectedPrompts());
+                
+                // Insert before the merge button
+                const mergeBtn = actionsDiv.querySelector('#mergeBtn');
+                if (mergeBtn) {
+                    actionsDiv.insertBefore(this.copyAllBtn, mergeBtn);
+                } else {
+                    actionsDiv.appendChild(this.copyAllBtn);
+                }
+                
+                // Initialize tooltip
+                new bootstrap.Tooltip(this.copyAllBtn);
+            }
+        }
+    }
+    
+    /**
+     * Initialize checkbox functionality for merge selection and multi-copy
      */
     initCheckboxes() {
         this.checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => this.updateMergeButton());
+            checkbox.addEventListener('change', () => this.handleCheckboxChange(checkbox));
             checkbox.addEventListener('click', (e) => this.handleCheckboxClick(e));
         });
     }
     
     /**
-     * Update merge button state based on selected prompts
+     * Handle checkbox change event
      */
-    updateMergeButton() {
-        const checkedBoxes = document.querySelectorAll('.prompt-checkbox:checked');
-        this.mergeBtn.disabled = checkedBoxes.length < 2;
+    handleCheckboxChange(checkbox) {
+        const promptId = checkbox.value;
+        const card = checkbox.closest('.prompt-card');
         
-        if (checkedBoxes.length >= 2) {
+        if (checkbox.checked) {
+            this.selectedPrompts.add(promptId);
+            card.classList.add('selected');
+        } else {
+            this.selectedPrompts.delete(promptId);
+            card.classList.remove('selected');
+        }
+        
+        this.updateUI();
+    }
+    
+    /**
+     * Update UI based on selected prompts
+     */
+    updateUI() {
+        const selectedCount = this.selectedPrompts.size;
+        
+        // Update merge button
+        this.mergeBtn.disabled = selectedCount < 2;
+        
+        // Update copy all button
+        if (this.copyAllBtn) {
+            this.copyAllBtn.disabled = selectedCount === 0;
+            this.copyAllBtn.innerHTML = `<i class="bi bi-clipboard-plus me-1"></i>Copy Selected (${selectedCount})`;
+            
+            // Update tooltip
+            const tooltip = bootstrap.Tooltip.getInstance(this.copyAllBtn);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            new bootstrap.Tooltip(this.copyAllBtn, {
+                title: selectedCount === 0 
+                    ? 'Select prompts to copy' 
+                    : `Copy content of ${selectedCount} selected prompt${selectedCount > 1 ? 's' : ''}`
+            });
+        }
+        
+        // Update merge button functionality
+        if (selectedCount >= 2) {
             this.mergeBtn.onclick = () => {
-                const ids = Array.from(checkedBoxes).map(cb => cb.value);
+                const ids = Array.from(this.selectedPrompts);
                 const mergeUrl = this.mergeBtn.getAttribute('data-merge-url') || '/prompts/merge';
                 window.location.href = `${mergeUrl}?ids=${ids.join('&ids=')}`;
             };
         }
+        
+        // Update checkbox tooltips
+        this.updateCheckboxTooltips();
     }
     
     /**
-     * Handle checkbox click to copy prompt content
+     * Update checkbox tooltips based on selection state
+     */
+    updateCheckboxTooltips() {
+        this.checkboxes.forEach(checkbox => {
+            const tooltip = bootstrap.Tooltip.getInstance(checkbox);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            
+            const selectedCount = this.selectedPrompts.size;
+            let tooltipText = '';
+            
+            if (checkbox.checked) {
+                if (selectedCount === 1) {
+                    tooltipText = 'Click to copy this prompt content';
+                } else {
+                    tooltipText = `Click to copy content of ${selectedCount} selected prompts`;
+                }
+            } else {
+                tooltipText = 'Click to select and copy this prompt content';
+            }
+            
+            new bootstrap.Tooltip(checkbox, { title: tooltipText });
+        });
+    }
+    
+    /**
+     * Handle checkbox click to copy selected prompts content
      */
     handleCheckboxClick(event) {
-        const checkbox = event.currentTarget;
-        const card = checkbox.closest('.prompt-card');
-        const copyButton = card.querySelector('.copy-content-btn');
-        
-        if (copyButton) {
-            const content = copyButton.getAttribute('data-content');
-            if (content) {
-                // Small delay to ensure checkbox state changes first
-                setTimeout(() => {
-                    this.copyToClipboard(content, copyButton);
-                }, 50);
+        // Small delay to ensure checkbox state changes first
+        setTimeout(() => {
+            if (this.selectedPrompts.size > 0) {
+                this.copyAllSelectedPrompts();
             }
+        }, 100);
+    }
+    
+    /**
+     * Copy content of all selected prompts
+     */
+    copyAllSelectedPrompts() {
+        const selectedContents = [];
+        
+        this.selectedPrompts.forEach(promptId => {
+            const checkbox = document.querySelector(`#prompt-${promptId}`);
+            if (checkbox) {
+                const card = checkbox.closest('.prompt-card');
+                const copyButton = card.querySelector('.copy-content-btn');
+                const title = card.querySelector('.card-title').textContent.trim();
+                
+                if (copyButton) {
+                    const content = copyButton.getAttribute('data-content');
+                    if (content) {
+                        selectedContents.push({
+                            title: title,
+                            content: content
+                        });
+                    }
+                }
+            }
+        });
+        
+        if (selectedContents.length > 0) {
+            const combinedContent = this.formatCombinedContent(selectedContents);
+            this.copyToClipboard(combinedContent, this.copyAllBtn);
+            
+            // Show visual feedback on all selected cards
+            this.showMultiCopySuccess();
+            
+            // Show success message
+            const count = selectedContents.length;
+            const message = count === 1 
+                ? 'Prompt content copied to clipboard!' 
+                : `Content of ${count} prompts copied to clipboard!`;
+            this.showToast(message, 'success');
         }
+    }
+    
+    /**
+     * Format combined content from multiple prompts
+     */
+    formatCombinedContent(selectedContents) {
+        if (selectedContents.length === 1) {
+            return selectedContents[0].content;
+        }
+        
+        let combined = '';
+        selectedContents.forEach((item, index) => {
+            combined += `=== ${item.title} ===\n\n`;
+            combined += item.content;
+            
+            if (index < selectedContents.length - 1) {
+                combined += '\n\n' + '='.repeat(50) + '\n\n';
+            }
+        });
+        
+        return combined;
+    }
+    
+    /**
+     * Show visual feedback for multi-copy operation
+     */
+    showMultiCopySuccess() {
+        this.selectedPrompts.forEach(promptId => {
+            const checkbox = document.querySelector(`#prompt-${promptId}`);
+            if (checkbox) {
+                const card = checkbox.closest('.prompt-card');
+                
+                // Add success styling using CSS class
+                card.classList.add('copy-success');
+                
+                // Remove styling after animation
+                setTimeout(() => {
+                    card.classList.remove('copy-success');
+                }, 2000);
+            }
+        });
     }
     
     /**
@@ -170,8 +350,18 @@ class PromptListManager {
         const originalHTML = buttonElement.innerHTML;
         const originalClass = buttonElement.className;
         
+        // Handle different button types
+        let successClass = '';
+        if (originalClass.includes('btn-outline-primary')) {
+            successClass = originalClass.replace('btn-outline-primary', 'btn-success');
+        } else if (originalClass.includes('btn-info')) {
+            successClass = originalClass.replace('btn-info', 'btn-success');
+        } else {
+            successClass = originalClass;
+        }
+        
         buttonElement.innerHTML = '<i class="bi bi-check"></i>';
-        buttonElement.className = originalClass.replace('btn-outline-primary', 'btn-success');
+        buttonElement.className = successClass;
         
         setTimeout(() => {
             buttonElement.innerHTML = originalHTML;
@@ -396,10 +586,36 @@ class PromptListManager {
             window.location.href = createUrl;
         }
         
+        // Ctrl/Cmd + C for copy selected prompts
+        if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+            event.preventDefault();
+            if (this.selectedPrompts.size > 0) {
+                this.copyAllSelectedPrompts();
+            }
+        }
+        
+        // Ctrl/Cmd + A for select all prompts
+        if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+            event.preventDefault();
+            this.selectAllPrompts();
+        }
+        
         // Escape to close any open content previews
         if (event.key === 'Escape') {
             this.closeAllContentPreviews();
         }
+    }
+    
+    /**
+     * Select all prompts
+     */
+    selectAllPrompts() {
+        this.checkboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                this.handleCheckboxChange(checkbox);
+            }
+        });
     }
     
     /**

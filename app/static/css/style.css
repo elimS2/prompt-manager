@@ -512,6 +512,44 @@ pre {
     font-weight: 500;
 }
 
+/* Multi-select visual feedback */
+.prompt-card.selected {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.prompt-card.copy-success {
+    border: 2px solid var(--success-color);
+    box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
+    transition: all 0.3s ease;
+}
+
+/* Copy All button styles */
+#copyAllBtn {
+    transition: all 0.3s ease;
+}
+
+#copyAllBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#copyAllBtn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Selection counter badge */
+.selection-counter {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
 /* Accessibility */
 .btn:focus,
 .form-control:focus,
