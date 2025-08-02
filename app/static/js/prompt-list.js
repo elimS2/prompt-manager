@@ -46,6 +46,7 @@ class PromptListManager {
         this.initCombinedContentPanel();
         this.initPanelToggleButton();
         this.restorePanelVisibility();
+        this.initTagFilters();
     }
     
     /**
@@ -1035,6 +1036,38 @@ class PromptListManager {
     }
 
     /**
+     * Initialize tag filter functionality
+     */
+    initTagFilters() {
+        const tagFilters = document.querySelectorAll('.tag-filter');
+        tagFilters.forEach(tag => {
+            tag.addEventListener('click', (e) => this.handleTagFilterClick(e));
+        });
+    }
+
+    /**
+     * Handle tag filter click with parameter preservation
+     */
+    handleTagFilterClick(event) {
+        event.preventDefault();
+        
+        const tagElement = event.currentTarget;
+        const tagName = tagElement.getAttribute('data-tag');
+        
+        // Get current URL and parameters
+        const url = new URL(window.location);
+        
+        // Add or update the tags parameter
+        const currentTags = url.searchParams.getAll('tags');
+        if (!currentTags.includes(tagName)) {
+            url.searchParams.append('tags', tagName);
+        }
+        
+        // Navigate to the new URL with preserved parameters
+        window.location.href = url.toString();
+    }
+
+    /**
      * Restore panel visibility preference from localStorage
      */
     restorePanelVisibility() {
@@ -1062,6 +1095,31 @@ document.addEventListener('DOMContentLoaded', function() {
         window.promptListManager = new PromptListManager();
     }
 });
+
+// Global functions for filter removal (called from HTML)
+window.removeTagFilter = function(tagName) {
+    const url = new URL(window.location);
+    const currentTags = url.searchParams.getAll('tags');
+    const newTags = currentTags.filter(tag => tag !== tagName);
+    
+    // Remove all tags parameters and add back the remaining ones
+    url.searchParams.delete('tags');
+    newTags.forEach(tag => url.searchParams.append('tags', tag));
+    
+    window.location.href = url.toString();
+};
+
+window.removeSearchFilter = function() {
+    const url = new URL(window.location);
+    url.searchParams.delete('search');
+    window.location.href = url.toString();
+};
+
+window.removeStatusFilter = function() {
+    const url = new URL(window.location);
+    url.searchParams.delete('is_active');
+    window.location.href = url.toString();
+};
 
 // Export for potential use in other modules
 window.PromptListManager = PromptListManager;

@@ -60,7 +60,7 @@ class PromptRepository(BaseRepository[Prompt]):
         
         return base_query.all()
     
-    def get_by_tags(self, tag_ids: List[int], match_all: bool = False) -> List[Prompt]:
+    def get_by_tags(self, tag_ids: List[int], match_all: bool = False, is_active: Optional[bool] = None) -> List[Prompt]:
         """
         Get prompts by tag IDs.
         
@@ -68,6 +68,7 @@ class PromptRepository(BaseRepository[Prompt]):
             tag_ids: List of tag IDs
             match_all: If True, return prompts that have ALL tags; 
                       If False, return prompts that have ANY of the tags
+            is_active: Filter by active status (None = no filter, True = active only, False = inactive only)
             
         Returns:
             List of prompts
@@ -86,30 +87,35 @@ class PromptRepository(BaseRepository[Prompt]):
                 .subquery()
             )
             
-            return (
-                self.model.query
-                .filter(self.model.id.in_(subquery))
-                .filter_by(is_active=True)
-                .all()
-            )
+            query = self.model.query.filter(self.model.id.in_(subquery))
+            
+            # Apply active status filter if specified
+            if is_active is not None:
+                query = query.filter(self.model.is_active == is_active)
+            
+            return query.all()
         else:
             # Find prompts that have ANY of the specified tags
-            return (
+            query = (
                 self.model.query
                 .join(prompt_tags)
                 .filter(prompt_tags.c.tag_id.in_(tag_ids))
-                .filter(self.model.is_active == True)
-                .distinct()
-                .all()
             )
+            
+            # Apply active status filter if specified
+            if is_active is not None:
+                query = query.filter(self.model.is_active == is_active)
+            
+            return query.distinct().all()
     
-    def get_by_tag_names(self, tag_names: List[str], match_all: bool = False) -> List[Prompt]:
+    def get_by_tag_names(self, tag_names: List[str], match_all: bool = False, is_active: Optional[bool] = None) -> List[Prompt]:
         """
         Get prompts by tag names.
         
         Args:
             tag_names: List of tag names
             match_all: If True, return prompts that have ALL tags
+            is_active: Filter by active status (None = no filter, True = active only, False = inactive only)
             
         Returns:
             List of prompts
@@ -128,7 +134,7 @@ class PromptRepository(BaseRepository[Prompt]):
         if not tag_ids:
             return []
         
-        return self.get_by_tags(tag_ids, match_all)
+        return self.get_by_tags(tag_ids, match_all, is_active)
     
     def get_recent(self, limit: int = 10, include_inactive: bool = False) -> List[Prompt]:
         """

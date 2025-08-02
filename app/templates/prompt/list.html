@@ -51,8 +51,9 @@
                 <div class="mb-3">
                     <label class="form-label">Popular Tags</label>
                     {% for item in popular_tags %}
-                        <a href="?tags={{ item.tag.name }}" 
-                           class="tag" 
+                        <a href="#" 
+                           class="tag tag-filter" 
+                           data-tag="{{ item.tag.name }}"
                            style="background-color: {{ item.tag.color }}">
                             {{ item.tag.name }} ({{ item.usage_count }})
                         </a>

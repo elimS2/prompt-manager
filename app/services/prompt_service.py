@@ -222,7 +222,8 @@ class PromptService:
         if 'tags' in filters and filters['tags']:
             tag_names = filters.pop('tags')
             match_all = filters.pop('tag_match_all', False)
-            prompts = self.prompt_repo.get_by_tag_names(tag_names, match_all)
+            is_active = filters.get('is_active')  # Get is_active before popping tags
+            prompts = self.prompt_repo.get_by_tag_names(tag_names, match_all, is_active)
             
             # Apply additional filters to tag-filtered results
             if filters:
@@ -233,7 +234,8 @@ class PromptService:
         elif 'tag_ids' in filters and filters['tag_ids']:
             tag_ids = filters.pop('tag_ids')
             match_all = filters.pop('tag_match_all', False)
-            prompts = self.prompt_repo.get_by_tags(tag_ids, match_all)
+            is_active = filters.get('is_active')  # Get is_active before popping tags
+            prompts = self.prompt_repo.get_by_tags(tag_ids, match_all, is_active)
             
             # Apply additional filters
             if filters:
