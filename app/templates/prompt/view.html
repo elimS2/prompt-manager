@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prompt.title }} - Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">{{ prompt.title }}</h2>
+                <div>
+                    {% if not prompt.is_active %}
+                        <span class="badge bg-warning">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Description -->
+                {% if prompt.description %}
+                    <p class="text-muted">{{ prompt.description }}</p>
+                    <hr>
+                {% endif %}
+                
+                <!-- Tags -->
+                <div class="mb-3">
+                    {% for tag in prompt.tags %}
+                        <span class="tag" style="background-color: {{ tag.color }}">
+                            {{ tag.name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                
+                <!-- Content -->
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5>Content</h5>
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                onclick="copyToClipboard('{{ prompt.content | replace('\n', '\\n') | replace('\r', '') | replace('\'', '\\\'') }}')">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <pre class="bg-light p-3 rounded">{{ prompt.content }}</pre>
+                </div>
+                
+                <!-- Metadata -->
+                <div class="mt-4 text-muted small">
+                    <p class="mb-1">Created: {{ prompt.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    <p class="mb-0">Updated: {{ prompt.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-success" onclick="sendToCursor({{ prompt.id }})">
+                            <i class="bi bi-cursor"></i> Send to Cursor
+                        </button>
+                        <form action="{{ url_for('prompt.duplicate', id=prompt.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-files"></i> Duplicate
+                            </button>
+                        </form>
+                        <a href="{{ url_for('prompt.edit', id=prompt.id) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        {% if prompt.is_active %}
+                            <button type="button" 
+                                    class="btn btn-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        {% else %}
+                            <form action="{{ url_for('prompt.restore', id=prompt.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-arrow-clockwise"></i> Restore
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Suggested Tags -->
+        {% if suggested_tags %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Suggested Tags</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Based on content analysis:</p>
+                    {% for tag in suggested_tags %}
+                        <span class="tag mb-1" style="background-color: {{ tag.color }}">
+                            {{ tag.name }}
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('prompt.merge', ids=[prompt.id]) }}" 
+                   class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrows-collapse"></i> Merge with Others
+                </a>
+                <a href="{{ url_for('prompt.search', q=prompt.title) }}" 
+                   class="list-group-item list-group-item-action">
+                    <i class="bi bi-search"></i> Find Similar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this prompt?</p>
+                <p class="text-muted">This will soft delete the prompt. You can restore it later if needed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('prompt.delete', id=prompt.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cursor Instructions Modal -->
+<div class="modal fade" id="cursorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-cursor"></i> Send to Cursor IDE
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cursorStatus" class="mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Checking Cursor IDE availability...</span>
+                    </div>
+                </div>
+                
+                <div id="cursorInstructions" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Instructions</h6>
+                        <ol id="instructionList" class="mb-0">
+                            <!-- Instructions will be populated here -->
+                        </ol>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Method:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="cursorMethod" 
+                                   id="clipboardMethod" value="clipboard" checked>
+                            <label class="form-check-label" for="clipboardMethod">
+                                <strong>Copy to Clipboard</strong>
+                                <p class="text-muted small mb-0">Copy prompt to clipboard and paste in Cursor</p>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="cursorMethod" 
+                                   id="fileMethod" value="file">
+                            <label class="form-check-label" for="fileMethod">
+                                <strong>Open in Cursor</strong>
+                                <p class="text-muted small mb-0">Open prompt as a file in Cursor IDE</p>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success" onclick="executeCursorAction()">
+                            <i class="bi bi-cursor"></i> Send to Cursor
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="copyPromptContent()">
+                            <i class="bi bi-clipboard"></i> Copy Content
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="cursorError" style="display: none;">
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Cursor IDE Not Found</h6>
+                        <p class="mb-2">Cursor IDE was not detected on your system. You can still manually copy the prompt content.</p>
+                        <button type="button" class="btn btn-outline-secondary" onclick="copyPromptContent()">
+                            <i class="bi bi-clipboard"></i> Copy Content Manually
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .content-section pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success message
+            showAlert('success', 'Content copied to clipboard!');
+        }, function(err) {
+            showAlert('warning', 'Could not copy text: ' + err);
+        });
+    }
+    
+    // Cursor IDE Integration Functions
+    let currentPromptId = null;
+    
+    function sendToCursor(promptId) {
+        currentPromptId = promptId;
+        const modal = new bootstrap.Modal(document.getElementById('cursorModal'));
+        modal.show();
+        
+        // Check Cursor status
+        checkCursorStatus();
+    }
+    
+    function checkCursorStatus() {
+        fetch('/api/cursor/status')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('cursorStatus').style.display = 'none';
+                
+                if (data.available) {
+                    document.getElementById('cursorInstructions').style.display = 'block';
+                    // Set default instructions
+                    setDefaultInstructions();
+                } else {
+                    document.getElementById('cursorError').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking Cursor status:', error);
+                document.getElementById('cursorStatus').style.display = 'none';
+                document.getElementById('cursorError').style.display = 'block';
+            });
+    }
+    
+    function setDefaultInstructions() {
+        const instructionList = document.getElementById('instructionList');
+        instructionList.innerHTML = `
+            <li>Open Cursor IDE</li>
+            <li>Navigate to the active chat</li>
+            <li>Paste the content (Ctrl+V / Cmd+V)</li>
+            <li>Press Enter to send the prompt</li>
+        `;
+    }
+    
+    function executeCursorAction() {
+        const method = document.querySelector('input[name="cursorMethod"]:checked').value;
+        
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Sending...';
+        button.disabled = true;
+        
+        if (currentPromptId) {
+            // Send specific prompt
+            fetch(`/api/cursor/send/${currentPromptId}?method=${method}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                
+                if (data.success) {
+                    // Update instructions if provided
+                    if (data.instructions) {
+                        const instructionList = document.getElementById('instructionList');
+                        instructionList.innerHTML = data.instructions.map(instruction => 
+                            `<li>${instruction}</li>`
+                        ).join('');
+                    }
+                    
+                    // Show success message
+                    showAlert('success', data.message);
+                } else {
+                    showAlert('warning', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending to Cursor:', error);
+                button.innerHTML = originalText;
+                button.disabled = false;
+                showAlert('danger', 'Error sending to Cursor IDE. Please try again.');
+            });
+        }
+    }
+    
+    function copyPromptContent() {
+        const content = `{{ prompt.content | replace('\n', '\\n') | replace('\r', '') | replace('\'', '\\\'') }}`;
+        const title = '{{ prompt.title | replace('\'', '\\\'') }}';
+        const formattedContent = `# ${title}\n\n${content}`;
+        
+        navigator.clipboard.writeText(formattedContent).then(function() {
+            showAlert('success', 'Prompt content copied to clipboard!');
+        }, function(err) {
+            showAlert('warning', 'Could not copy to clipboard automatically. Please copy manually.');
+        });
+    }
+    
+    function showAlert(type, message) {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the card body
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

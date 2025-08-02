@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Search Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="mb-3">Search Results</h3>
+                <form action="{{ url_for('prompt.search') }}" method="get" class="row g-3">
+                    <div class="col-md-9">
+                        <input type="search" 
+                               class="form-control form-control-lg" 
+                               name="q" 
+                               value="{{ query }}"
+                               placeholder="Search prompts by title, content, or description..."
+                               autofocus>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                </form>
+                
+                {% if query %}
+                    <div class="mt-3">
+                        <p class="text-muted mb-0">
+                            Found <strong>{{ count }}</strong> result{{ 's' if count != 1 else '' }} 
+                            for "<strong>{{ query }}</strong>"
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Search Results -->
+        {% if prompts %}
+            <div class="row">
+                {% for prompt in prompts %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 prompt-card">
+                            <div class="card-body">
+                                <!-- Highlight matching text in title -->
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('prompt.view', id=prompt.id) }}" 
+                                       class="text-decoration-none">
+                                        {{ prompt.title }}
+                                    </a>
+                                </h5>
+                                
+                                {% if prompt.description %}
+                                    <p class="card-text text-muted small">
+                                        {{ prompt.description[:150] }}{% if prompt.description|length > 150 %}...{% endif %}
+                                    </p>
+                                {% endif %}
+                                
+                                <!-- Content Preview with highlighted matches -->
+                                <div class="content-preview bg-light p-2 rounded mb-2">
+                                    <pre class="small mb-0" style="white-space: pre-wrap;">{{ prompt.content[:200] }}{% if prompt.content|length > 200 %}...{% endif %}</pre>
+                                </div>
+                                
+                                <!-- Tags -->
+                                <div class="mb-2">
+                                    {% for tag in prompt.tags %}
+                                        <span class="tag" style="background-color: {{ tag.color }}">
+                                            {{ tag.name }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        Updated {{ prompt.updated_at.strftime('%b %d, %Y') }}
+                                    </small>
+                                    <div>
+                                        <a href="{{ url_for('prompt.view', id=prompt.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                        <a href="{{ url_for('prompt.edit', id=prompt.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No results found</h4>
+                {% if query %}
+                    <p class="text-muted">Try different keywords or check your spelling</p>
+                {% else %}
+                    <p class="text-muted">Enter a search query to find prompts</p>
+                {% endif %}
+                <a href="{{ url_for('prompt.index') }}" class="btn btn-primary mt-3">
+                    Browse All Prompts
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .content-preview {
+        font-size: 0.875rem;
+        overflow: hidden;
+    }
+    
+    .prompt-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Highlight search matches (future enhancement) */
+    .highlight {
+        background-color: #fff3cd;
+        padding: 0 2px;
+    }
+</style>
+{% endblock %}

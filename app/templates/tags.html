@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Tags - Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Tag Cloud -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Tag Cloud</h3>
+                <form method="POST" action="{{ url_for('prompt.cleanup_tags') }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                            onclick="return confirm('This will remove all unused tags. Continue?')">
+                        <i class="bi bi-trash"></i> Cleanup Unused
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="tag-cloud text-center">
+                    {% for tag_data in tag_cloud %}
+                        <a href="{{ url_for('prompt.index', tags=tag_data.name) }}" 
+                           class="tag-cloud-item" 
+                           style="background-color: {{ tag_data.color }}; 
+                                  font-size: {{ 0.8 + (tag_data.weight * 0.2) }}rem;
+                                  opacity: {{ 0.6 + (tag_data.weight * 0.04) }};"
+                           title="{{ tag_data.usage_count }} prompt{{ 's' if tag_data.usage_count != 1 else '' }}">
+                            {{ tag_data.name }}
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No tags found. Create some prompts with tags to see them here.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popular Tags List -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Most Popular Tags</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for tag_data in statistics.popular_tags %}
+                    <a href="{{ url_for('prompt.index', tags=tag_data.name) }}" 
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>
+                            <span class="badge me-2" style="background-color: #3B82F6">
+                                {{ tag_data.name }}
+                            </span>
+                        </span>
+                        <span class="badge bg-secondary rounded-pill">
+                            {{ tag_data.count }} prompt{{ 's' if tag_data.count != 1 else '' }}
+                        </span>
+                    </a>
+                {% else %}
+                    <div class="list-group-item text-muted">
+                        No tags yet
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Sidebar -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Tag Statistics</h4>
+            </div>
+            <div class="card-body">
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Tags</span>
+                        <span class="fs-4 fw-bold">{{ statistics.total_tags }}</span>
+                    </div>
+                </div>
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Used Tags</span>
+                        <span class="fs-4 fw-bold text-success">{{ statistics.used_tags }}</span>
+                    </div>
+                </div>
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Unused Tags</span>
+                        <span class="fs-4 fw-bold text-warning">{{ statistics.unused_tags }}</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Avg. Prompts/Tag</span>
+                        <span class="fs-5">{{ "%.1f"|format(statistics.avg_prompts_per_tag) }}</span>
+                    </div>
+                </div>
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Max Prompts/Tag</span>
+                        <span class="fs-5">{{ statistics.max_prompts_per_tag }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tag Management Tips -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Tag Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Tags are automatically normalized (lowercase, hyphenated)</li>
+                    <li>Use descriptive tags like "python", "api-docs", "code-review"</li>
+                    <li>Tags help organize and find prompts quickly</li>
+                    <li>Unused tags can be cleaned up to keep things tidy</li>
+                    <li>Click any tag to filter prompts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tag-cloud {
+        padding: 2rem;
+        line-height: 2.5;
+    }
+    
+    .tag-cloud-item {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        margin: 0.3rem;
+        border-radius: 0.25rem;
+        color: white;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .tag-cloud-item:hover {
+        transform: scale(1.1);
+        color: white;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .stat-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

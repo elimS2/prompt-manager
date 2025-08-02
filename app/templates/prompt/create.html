@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Create Prompt - Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Create New Prompt</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('prompt.create') }}" id="createForm">
+                    <!-- Title Field -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="title" 
+                               name="title" 
+                               required 
+                               maxlength="255"
+                               placeholder="Enter a descriptive title for your prompt"
+                               autofocus>
+                        <div class="form-text">Maximum 255 characters</div>
+                    </div>
+                    
+                    <!-- Content Field -->
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                        <textarea class="form-control" 
+                                  id="content" 
+                                  name="content" 
+                                  rows="8" 
+                                  required
+                                  placeholder="Enter your prompt content here..."></textarea>
+                        <div class="form-text">
+                            <span id="charCount">0</span> characters
+                        </div>
+                    </div>
+                    
+                    <!-- Description Field -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  placeholder="Optional: Add a brief description of what this prompt does"></textarea>
+                    </div>
+                    
+                    <!-- Tags Field -->
+                    <div class="mb-4">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="tags" 
+                               name="tags"
+                               placeholder="Enter tags separated by commas (e.g., python, code-review, documentation)">
+                        <div class="form-text">Tags help organize and find prompts later</div>
+                    </div>
+                    
+                    <!-- Active Status -->
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="is_active" 
+                               name="is_active" 
+                               value="true" 
+                               checked>
+                        <label class="form-check-label" for="is_active">
+                            Active (visible in lists and searches)
+                        </label>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                                <i class="bi bi-eye"></i> Preview
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Create Prompt
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h4 id="previewTitle"></h4>
+                <p class="text-muted" id="previewDescription"></p>
+                <div id="previewTags" class="mb-3"></div>
+                <pre class="bg-light p-3 rounded" id="previewContent"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Character counter
+    const contentField = document.getElementById('content');
+    const charCount = document.getElementById('charCount');
+    
+    contentField.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+    });
+    
+    // Preview functionality
+    const previewBtn = document.getElementById('previewBtn');
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    
+    previewBtn.addEventListener('click', function() {
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const description = document.getElementById('description').value;
+        const tags = document.getElementById('tags').value;
+        
+        document.getElementById('previewTitle').textContent = title || 'No title';
+        document.getElementById('previewContent').textContent = content || 'No content';
+        document.getElementById('previewDescription').textContent = description || '';
+        
+        // Display tags
+        const tagsContainer = document.getElementById('previewTags');
+        tagsContainer.innerHTML = '';
+        if (tags) {
+            tags.split(',').forEach(tag => {
+                if (tag.trim()) {
+                    const span = document.createElement('span');
+                    span.className = 'tag';
+                    span.style.backgroundColor = '#3B82F6';
+                    span.textContent = tag.trim();
+                    tagsContainer.appendChild(span);
+                }
+            });
+        }
+        
+        previewModal.show();
+    });
+    
+    // Form validation
+    const form = document.getElementById('createForm');
+    form.addEventListener('submit', function(e) {
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('content').value.trim();
+        
+        if (!title || !content) {
+            e.preventDefault();
+            alert('Title and content are required');
+        }
+    });
+</script>
+{% endblock %}

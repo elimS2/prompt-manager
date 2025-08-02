@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Merge Prompts - Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Merge Prompts</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('prompt.merge') }}" id="mergeForm">
+                    <!-- Hidden fields for prompt IDs -->
+                    {% for prompt in prompts %}
+                        <input type="hidden" name="prompt_ids" value="{{ prompt.id }}">
+                    {% endfor %}
+                    
+                    <!-- Selected Prompts -->
+                    <div class="mb-4">
+                        <h5>Selected Prompts ({{ prompts|length }})</h5>
+                        <div class="selected-prompts">
+                            {% for prompt in prompts %}
+                                <div class="card mb-2">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-1">{{ prompt.title }}</h6>
+                                        <p class="text-muted small mb-0">{{ prompt.content[:100] }}...</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Merge Strategy -->
+                    <div class="mb-4">
+                        <label class="form-label">Merge Strategy</label>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="strategy" 
+                                           id="simple" value="simple" checked>
+                                    <label class="form-check-label" for="simple">
+                                        <strong>Simple Concatenation</strong>
+                                        <p class="text-muted small mb-0">Join prompts one after another</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="strategy" 
+                                           id="separator" value="separator">
+                                    <label class="form-check-label" for="separator">
+                                        <strong>With Separator</strong>
+                                        <p class="text-muted small mb-0">Add custom separator between prompts</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="strategy" 
+                                           id="numbered" value="numbered">
+                                    <label class="form-check-label" for="numbered">
+                                        <strong>Numbered List</strong>
+                                        <p class="text-muted small mb-0">Create a numbered list of prompts</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="strategy" 
+                                           id="bulleted" value="bulleted">
+                                    <label class="form-check-label" for="bulleted">
+                                        <strong>Bulleted List</strong>
+                                        <p class="text-muted small mb-0">Create a bullet point list</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="strategy" 
+                                           id="template" value="template">
+                                    <label class="form-check-label" for="template">
+                                        <strong>Custom Template</strong>
+                                        <p class="text-muted small mb-0">Use a template with variables</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Strategy Options -->
+                    <div id="strategyOptions">
+                        <!-- Separator Option -->
+                        <div id="separatorOption" class="strategy-option" style="display: none;">
+                            <div class="mb-3">
+                                <label for="separator" class="form-label">Separator Text</label>
+                                <textarea class="form-control" id="separator" name="separator" 
+                                          rows="2">
+
+---
+
+</textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Template Option -->
+                        <div id="templateOption" class="strategy-option" style="display: none;">
+                            <div class="mb-3">
+                                <label for="template" class="form-label">Template</label>
+                                <textarea class="form-control" id="template" name="template" 
+                                          rows="5" placeholder="Use variables like {title_1}, {content_1}, {prompts}, {count}">Combined Prompts ({count} total):
+
+{prompts}</textarea>
+                                <div class="form-text">
+                                    Available variables: {prompts}, {count}, {titles}, 
+                                    {prompt_1}, {prompt_2}, etc., {title_1}, {title_2}, etc., 
+                                    {content_1}, {content_2}, etc.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Common Options -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_title" 
+                                       name="include_title" value="true" checked>
+                                <label class="form-check-label" for="include_title">
+                                    Include prompt titles
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_description" 
+                                       name="include_description" value="true">
+                                <label class="form-check-label" for="include_description">
+                                    Include descriptions
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                                <i class="bi bi-eye"></i> Preview
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-arrows-collapse"></i> Merge Prompts
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tips Sidebar -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Merge Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li><strong>Simple:</strong> Best for combining related prompts</li>
+                    <li><strong>Separator:</strong> Use when you want clear divisions</li>
+                    <li><strong>Numbered:</strong> Great for step-by-step instructions</li>
+                    <li><strong>Bulleted:</strong> Good for lists of options</li>
+                    <li><strong>Template:</strong> Maximum control over output format</li>
+                </ul>
+                <div class="alert alert-info small">
+                    <i class="bi bi-lightbulb"></i> 
+                    Merged content can be edited after creation
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Strategy option visibility
+    const strategyRadios = document.querySelectorAll('input[name="strategy"]');
+    const strategyOptions = document.querySelectorAll('.strategy-option');
+    
+    strategyRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Hide all options
+            strategyOptions.forEach(option => option.style.display = 'none');
+            
+            // Show relevant option
+            if (this.value === 'separator') {
+                document.getElementById('separatorOption').style.display = 'block';
+            } else if (this.value === 'template') {
+                document.getElementById('templateOption').style.display = 'block';
+            }
+        });
+    });
+    
+    // Preview functionality (simplified for now)
+    document.getElementById('previewBtn').addEventListener('click', function() {
+        alert('Preview functionality will show the merged result based on your selected options.');
+    });
+</script>
+{% endblock %}

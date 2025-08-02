@@ -1,0 +1,29 @@
+[flake8]
+max-line-length = 100
+max-complexity = 10
+exclude = 
+    .git,
+    __pycache__,
+    venv,
+    env,
+    .venv,
+    .env,
+    build,
+    dist,
+    *.egg-info,
+    migrations,
+    .pytest_cache,
+    htmlcov,
+    .mypy_cache
+ignore = 
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (we use max-line-length)
+    E501
+per-file-ignores =
+    # Imported but unused in __init__.py files
+    __init__.py:F401
+    # Complex fixtures in conftest
+    tests/conftest.py:C901
