@@ -66,21 +66,39 @@
                 <div class="col-12 mb-4">
                     <div class="card prompt-card h-100">
                         <div class="card-body">
-                            <div class="form-check">
-                                <input class="form-check-input prompt-checkbox" 
-                                       type="checkbox" 
-                                       value="{{ prompt.id }}"
-                                       id="prompt-{{ prompt.id }}">
-                                <label class="form-check-label" for="prompt-{{ prompt.id }}">
-                                    <h5 class="card-title">{{ prompt.title }}</h5>
-                                </label>
+                            <!-- Header with checkbox and title -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="form-check flex-grow-1">
+                                    <input class="form-check-input prompt-checkbox" 
+                                           type="checkbox" 
+                                           value="{{ prompt.id }}"
+                                           id="prompt-{{ prompt.id }}">
+                                    <label class="form-check-label" for="prompt-{{ prompt.id }}">
+                                        <h5 class="card-title mb-0">{{ prompt.title }}</h5>
+                                    </label>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-primary copy-content-btn" 
+                                            data-content="{{ prompt.content|e }}"
+                                            data-bs-toggle="tooltip" 
+                                            title="Copy content">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary toggle-content-btn"
+                                            data-bs-toggle="tooltip" 
+                                            title="Toggle content">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </div>
                             </div>
                             
+                            <!-- Description -->
                             {% if prompt.description %}
-                                <p class="card-text text-muted small">{{ prompt.description }}</p>
+                                <p class="card-text text-muted small mb-3">{{ prompt.description }}</p>
                             {% endif %}
                             
-                            <div class="mb-2">
+                            <!-- Tags -->
+                            <div class="mb-3">
                                 {% for tag in prompt.tags %}
                                     <span class="tag" style="background-color: {{ tag.color }}">
                                         {{ tag.name }}
@@ -88,15 +106,38 @@
                                 {% endfor %}
                             </div>
                             
+                            <!-- Content Preview (Collapsible) -->
+                            <div class="content-preview mb-3" style="display: none;">
+                                <div class="content-header d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-muted">Content Preview</h6>
+                                    <small class="text-muted">{{ prompt.content|length }} characters</small>
+                                </div>
+                                <div class="content-body">
+                                    <pre class="content-text">{{ prompt.content }}</pre>
+                                </div>
+                            </div>
+                            
+                            <!-- Footer with metadata and actions -->
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
                                     Created {{ prompt.created_at.strftime('%Y-%m-%d') }}
+                                    {% if prompt.updated_at != prompt.created_at %}
+                                        • Updated {{ prompt.updated_at.strftime('%Y-%m-%d') }}
+                                    {% endif %}
                                 </small>
-                                <div>
+                                <div class="btn-group" role="group">
                                     <a href="{{ url_for('prompt.view', id=prompt.id) }}" 
-                                       class="btn btn-sm btn-outline-primary">View</a>
+                                       class="btn btn-sm btn-outline-primary"
+                                       data-bs-toggle="tooltip" 
+                                       title="View full prompt">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                     <a href="{{ url_for('prompt.edit', id=prompt.id) }}" 
-                                       class="btn btn-sm btn-outline-secondary">Edit</a>
+                                       class="btn btn-sm btn-outline-secondary"
+                                       data-bs-toggle="tooltip" 
+                                       title="Edit prompt">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -104,7 +145,14 @@
                 </div>
             {% else %}
                 <div class="col-12">
-                    <p class="text-center text-muted">No prompts found.</p>
+                    <div class="text-center py-5">
+                        <i class="bi bi-chat-text display-1 text-muted"></i>
+                        <h3 class="text-muted mt-3">No prompts found</h3>
+                        <p class="text-muted">Create your first prompt to get started!</p>
+                        <a href="{{ url_for('prompt.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Create New Prompt
+                        </a>
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -140,39 +188,14 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/prompt-list.js') }}"></script>
 <script>
-    // Handle checkbox selection for merge
-    const checkboxes = document.querySelectorAll('.prompt-checkbox');
-    const mergeBtn = document.getElementById('mergeBtn');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateMergeButton);
-    });
-    
-    function updateMergeButton() {
-        const checkedBoxes = document.querySelectorAll('.prompt-checkbox:checked');
-        mergeBtn.disabled = checkedBoxes.length < 2;
-        
-        if (checkedBoxes.length >= 2) {
-            mergeBtn.onclick = function() {
-                const ids = Array.from(checkedBoxes).map(cb => cb.value);
-                window.location.href = '{{ url_for("prompt.merge") }}?ids=' + ids.join('&ids=');
-            };
+    // Set merge URL for the PromptListManager
+    document.addEventListener('DOMContentLoaded', function() {
+        const mergeBtn = document.getElementById('mergeBtn');
+        if (mergeBtn) {
+            mergeBtn.setAttribute('data-merge-url', '{{ url_for("prompt.merge") }}');
         }
-    }
-    
-    // Handle filter changes
-    const filterInputs = document.querySelectorAll('input[name="is_active"]');
-    filterInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const url = new URL(window.location);
-            if (this.value) {
-                url.searchParams.set('is_active', this.value);
-            } else {
-                url.searchParams.delete('is_active');
-            }
-            window.location.href = url.toString();
-        });
     });
 </script>
 {% endblock %}

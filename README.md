@@ -21,9 +21,11 @@ A modern Flask-based application for managing, organizing, and merging text prom
 
 ### User Experience
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
-- **Keyboard Shortcuts**: Ctrl+K for search, Ctrl+N for new prompt
+- **Enhanced Prompt List**: View and copy content directly from the list without navigation
+- **Inline Content Preview**: Expandable content with smooth animations
+- **Quick Copy Functionality**: One-click copying with visual feedback
+- **Keyboard Shortcuts**: Ctrl+K for search, Ctrl+N for new prompt, Escape to close previews
 - **Toast Notifications**: Non-intrusive feedback for user actions
-- **Copy to Clipboard**: One-click copying with visual feedback
 - **Auto-save Drafts**: Never lose your work (coming soon)
 
 ### Technical Features
