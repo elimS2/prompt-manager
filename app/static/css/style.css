@@ -419,6 +419,17 @@ pre {
         width: 100%;
     }
     
+    #copyAllBtn,
+    #clearSelectionBtn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    #copyAllBtn i,
+    #clearSelectionBtn i {
+        margin-right: 0.25rem;
+    }
+    
     .btn-group {
         flex-wrap: wrap;
         gap: 0.25rem;
@@ -537,6 +548,27 @@ pre {
 #copyAllBtn:not(:disabled):hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Clear Selection button styles */
+#clearSelectionBtn {
+    transition: all 0.3s ease;
+}
+
+#clearSelectionBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#clearSelectionBtn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
+#clearSelectionBtn.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
 }
 
 /* Selection counter badge */

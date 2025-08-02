@@ -28,17 +28,18 @@ class PromptListManager {
         this.initArchiveForms();
         this.initRestoreForms();
         this.initKeyboardShortcuts();
-        this.createCopyAllButton();
+        this.createActionButtons();
     }
     
     /**
-     * Create "Copy All Selected" button
+     * Create action buttons for multi-select functionality
      */
-    createCopyAllButton() {
+    createActionButtons() {
         const actionsBar = document.querySelector('.d-flex.justify-content-between.align-items-center');
         if (actionsBar) {
             const actionsDiv = actionsBar.querySelector('div');
             if (actionsDiv) {
+                // Create "Copy All Selected" button
                 this.copyAllBtn = document.createElement('button');
                 this.copyAllBtn.className = 'btn btn-info me-2';
                 this.copyAllBtn.id = 'copyAllBtn';
@@ -49,16 +50,30 @@ class PromptListManager {
                 
                 this.copyAllBtn.addEventListener('click', () => this.copyAllSelectedPrompts());
                 
-                // Insert before the merge button
+                // Create "Clear Selection" button
+                this.clearSelectionBtn = document.createElement('button');
+                this.clearSelectionBtn.className = 'btn btn-outline-secondary me-2';
+                this.clearSelectionBtn.id = 'clearSelectionBtn';
+                this.clearSelectionBtn.disabled = true;
+                this.clearSelectionBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Clear Selection';
+                this.clearSelectionBtn.setAttribute('data-bs-toggle', 'tooltip');
+                this.clearSelectionBtn.setAttribute('title', 'Clear selection and clipboard');
+                
+                this.clearSelectionBtn.addEventListener('click', () => this.clearSelectionAndClipboard());
+                
+                // Insert buttons before the merge button
                 const mergeBtn = actionsDiv.querySelector('#mergeBtn');
                 if (mergeBtn) {
-                    actionsDiv.insertBefore(this.copyAllBtn, mergeBtn);
+                    actionsDiv.insertBefore(this.clearSelectionBtn, mergeBtn);
+                    actionsDiv.insertBefore(this.copyAllBtn, this.clearSelectionBtn);
                 } else {
                     actionsDiv.appendChild(this.copyAllBtn);
+                    actionsDiv.appendChild(this.clearSelectionBtn);
                 }
                 
-                // Initialize tooltip
+                // Initialize tooltips
                 new bootstrap.Tooltip(this.copyAllBtn);
+                new bootstrap.Tooltip(this.clearSelectionBtn);
             }
         }
     }
@@ -114,6 +129,22 @@ class PromptListManager {
                 title: selectedCount === 0 
                     ? 'Select prompts to copy' 
                     : `Copy content of ${selectedCount} selected prompt${selectedCount > 1 ? 's' : ''}`
+            });
+        }
+        
+        // Update clear selection button
+        if (this.clearSelectionBtn) {
+            this.clearSelectionBtn.disabled = selectedCount === 0;
+            
+            // Update tooltip
+            const tooltip = bootstrap.Tooltip.getInstance(this.clearSelectionBtn);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            new bootstrap.Tooltip(this.clearSelectionBtn, {
+                title: selectedCount === 0 
+                    ? 'No selection to clear' 
+                    : `Clear ${selectedCount} selected prompt${selectedCount > 1 ? 's' : ''} and clipboard`
             });
         }
         
@@ -249,6 +280,59 @@ class PromptListManager {
                 }, 2000);
             }
         });
+    }
+    
+    /**
+     * Clear selection and clipboard
+     */
+    clearSelectionAndClipboard() {
+        const selectedCount = this.selectedPrompts.size;
+        
+        if (selectedCount === 0) {
+            this.showToast('No selection to clear', 'info');
+            return;
+        }
+        
+        // Clear clipboard by writing empty string
+        navigator.clipboard.writeText('').then(() => {
+            // Clear all checkboxes
+            this.checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    this.handleCheckboxChange(checkbox);
+                }
+            });
+            
+            // Show visual feedback
+            this.showClearSelectionSuccess();
+            
+            // Show success message
+            const message = selectedCount === 1 
+                ? 'Selection cleared and clipboard emptied!' 
+                : `${selectedCount} selections cleared and clipboard emptied!`;
+            this.showToast(message, 'success');
+            
+        }).catch((err) => {
+            console.error('Could not clear clipboard: ', err);
+            this.showToast('Failed to clear clipboard', 'error');
+        });
+    }
+    
+    /**
+     * Show visual feedback for clear selection operation
+     */
+    showClearSelectionSuccess() {
+        // Add visual feedback to the clear button
+        const originalHTML = this.clearSelectionBtn.innerHTML;
+        const originalClass = this.clearSelectionBtn.className;
+        
+        this.clearSelectionBtn.innerHTML = '<i class="bi bi-check"></i>';
+        this.clearSelectionBtn.className = originalClass.replace('btn-outline-secondary', 'btn-success');
+        
+        setTimeout(() => {
+            this.clearSelectionBtn.innerHTML = originalHTML;
+            this.clearSelectionBtn.className = originalClass;
+        }, 2000);
     }
     
     /**
@@ -598,6 +682,12 @@ class PromptListManager {
         if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
             event.preventDefault();
             this.selectAllPrompts();
+        }
+        
+        // Ctrl/Cmd + Shift + C for clear selection and clipboard
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'C') {
+            event.preventDefault();
+            this.clearSelectionAndClipboard();
         }
         
         // Escape to close any open content previews
