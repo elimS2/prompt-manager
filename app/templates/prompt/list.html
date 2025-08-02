@@ -191,7 +191,7 @@
                     <div class="col-12 mb-3">
                         <div class="card prompt-card {% if not prompt.is_active %}inactive-prompt{% endif %}">
                         <div class="card-body py-3">
-                            <!-- Header with checkbox, title and actions -->
+                            <!-- Header with checkbox, title, tags and actions -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div class="form-check flex-grow-1">
                                     <input class="form-check-input prompt-checkbox" 
@@ -201,13 +201,25 @@
                                            data-bs-toggle="tooltip" 
                                            title="Click to select and copy content">
                                     <label class="form-check-label" for="prompt-{{ prompt.id }}">
-                                        <h5 class="card-title mb-0">
-                                            {% if filters.get('search') %}
-                                                {{ prompt.title | highlight_search(filters.get('search')) | safe }}
-                                            {% else %}
-                                                {{ prompt.title }}
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <h5 class="card-title mb-0 me-3">
+                                                {% if filters.get('search') %}
+                                                    {{ prompt.title | highlight_search(filters.get('search')) | safe }}
+                                                {% else %}
+                                                    {{ prompt.title }}
+                                                {% endif %}
+                                            </h5>
+                                            <!-- Tags inline with title -->
+                                            {% if prompt.tags %}
+                                                <div class="prompt-tags-inline">
+                                                    {% for tag in prompt.tags %}
+                                                        <span class="tag tag-inline" style="background-color: {{ tag.color }}">
+                                                            {{ tag.name }}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
                                             {% endif %}
-                                        </h5>
+                                        </div>
                                     </label>
                                 </div>
                                 <div class="prompt-actions-group" role="group">
@@ -271,14 +283,7 @@
                                 </p>
                             {% endif %}
                             
-                            <!-- Tags -->
-                            <div class="mb-2">
-                                {% for tag in prompt.tags %}
-                                    <span class="tag" style="background-color: {{ tag.color }}">
-                                        {{ tag.name }}
-                                    </span>
-                                {% endfor %}
-                            </div>
+
                             
                             <!-- Content Preview (Collapsible) -->
                             <div class="content-preview mb-3" style="display: none;">
