@@ -17,6 +17,15 @@ class PromptListManager {
         this.selectedPrompts = new Set();
         this.copyAllBtn = null;
         
+        // Combined content panel elements
+        this.combinedContentPanel = document.getElementById('combinedContentPanel');
+        this.combinedContentTextarea = document.getElementById('combinedContentTextarea');
+        this.selectedCountBadge = document.getElementById('selectedCount');
+        this.copyCombinedBtn = document.getElementById('copyCombinedBtn');
+        this.clearCombinedBtn = document.getElementById('clearCombinedBtn');
+        this.charCountSpan = document.getElementById('charCount');
+        this.wordCountSpan = document.getElementById('wordCount');
+        
         this.init();
     }
     
@@ -29,6 +38,7 @@ class PromptListManager {
         this.initRestoreForms();
         this.initKeyboardShortcuts();
         this.createActionButtons();
+        this.initCombinedContentPanel();
     }
     
     /**
@@ -157,8 +167,168 @@ class PromptListManager {
             };
         }
         
+        // Update combined content panel
+        this.updateCombinedContentPanel();
+        
         // Update checkbox tooltips
         this.updateCheckboxTooltips();
+    }
+    
+    /**
+     * Initialize combined content panel functionality
+     */
+    initCombinedContentPanel() {
+        if (!this.combinedContentPanel || !this.combinedContentTextarea) {
+            return;
+        }
+        
+        // Initialize clear combined button
+        if (this.clearCombinedBtn) {
+            this.clearCombinedBtn.addEventListener('click', () => this.clearCombinedContent());
+        }
+        
+        // Initialize copy combined button
+        if (this.copyCombinedBtn) {
+            this.copyCombinedBtn.addEventListener('click', () => this.copyCombinedContent());
+        }
+        
+        // Initialize textarea input event for character/word counting
+        if (this.combinedContentTextarea) {
+            this.combinedContentTextarea.addEventListener('input', () => this.updateTextCounts());
+        }
+    }
+    
+    /**
+     * Update combined content panel visibility and content
+     */
+    updateCombinedContentPanel() {
+        const selectedCount = this.selectedPrompts.size;
+        
+        if (selectedCount === 0) {
+            this.hideCombinedContentPanel();
+            return;
+        }
+        
+        this.showCombinedContentPanel();
+        this.updateCombinedContent();
+        this.updateSelectedCount(selectedCount);
+    }
+    
+    /**
+     * Show combined content panel
+     */
+    showCombinedContentPanel() {
+        if (this.combinedContentPanel) {
+            this.combinedContentPanel.style.display = 'block';
+            this.combinedContentPanel.classList.add('fade-in');
+        }
+    }
+    
+    /**
+     * Hide combined content panel
+     */
+    hideCombinedContentPanel() {
+        if (this.combinedContentPanel) {
+            this.combinedContentPanel.classList.add('slide-up');
+            setTimeout(() => {
+                this.combinedContentPanel.style.display = 'none';
+                this.combinedContentPanel.classList.remove('slide-up');
+            }, 300);
+        }
+    }
+    
+    /**
+     * Update combined content in textarea
+     */
+    updateCombinedContent() {
+        if (!this.combinedContentTextarea) {
+            return;
+        }
+        
+        const selectedContents = [];
+        
+        this.selectedPrompts.forEach(promptId => {
+            const checkbox = document.querySelector(`#prompt-${promptId}`);
+            if (checkbox) {
+                const card = checkbox.closest('.prompt-card');
+                const copyButton = card.querySelector('.copy-content-btn');
+                const title = card.querySelector('.card-title').textContent.trim();
+                
+                if (copyButton) {
+                    const content = copyButton.getAttribute('data-content');
+                    if (content) {
+                        selectedContents.push({
+                            title: title,
+                            content: content
+                        });
+                    }
+                }
+            }
+        });
+        
+        if (selectedContents.length > 0) {
+            const combinedContent = this.formatCombinedContent(selectedContents);
+            this.combinedContentTextarea.value = combinedContent;
+            this.updateTextCounts();
+        }
+    }
+    
+    /**
+     * Update selected count badge
+     */
+    updateSelectedCount(count) {
+        if (this.selectedCountBadge) {
+            this.selectedCountBadge.textContent = count;
+        }
+    }
+    
+    /**
+     * Update character and word counts
+     */
+    updateTextCounts() {
+        if (!this.combinedContentTextarea || !this.charCountSpan || !this.wordCountSpan) {
+            return;
+        }
+        
+        const text = this.combinedContentTextarea.value;
+        const charCount = text.length;
+        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+        
+        this.charCountSpan.textContent = charCount;
+        this.wordCountSpan.textContent = wordCount;
+        
+        // Update copy button state
+        if (this.copyCombinedBtn) {
+            this.copyCombinedBtn.disabled = charCount === 0;
+        }
+    }
+    
+    /**
+     * Copy combined content to clipboard
+     */
+    copyCombinedContent() {
+        if (!this.combinedContentTextarea) {
+            return;
+        }
+        
+        const content = this.combinedContentTextarea.value;
+        if (content.trim()) {
+            this.copyToClipboard(content, this.copyCombinedBtn);
+            this.showToast('Combined content copied to clipboard!', 'success');
+        } else {
+            this.showToast('No content to copy', 'warning');
+        }
+    }
+    
+    /**
+     * Clear combined content
+     */
+    clearCombinedContent() {
+        if (this.combinedContentTextarea) {
+            this.combinedContentTextarea.value = '';
+            this.updateTextCounts();
+        }
+        this.showToast('Combined content cleared', 'info');
     }
     
     /**
@@ -302,6 +472,9 @@ class PromptListManager {
                     this.handleCheckboxChange(checkbox);
                 }
             });
+            
+            // Clear combined content panel
+            this.clearCombinedContent();
             
             // Show visual feedback
             this.showClearSelectionSuccess();
