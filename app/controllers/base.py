@@ -169,11 +169,11 @@ class BaseController:
             filters['created_before'] = created_before
         
         # Sorting - these are not model fields, so we'll handle them separately
-        sort_by = request.args.get('sort_by', 'created')
-        if sort_by in ['created', 'updated', 'title']:
+        sort_by = request.args.get('sort_by', 'order')
+        if sort_by in ['created', 'updated', 'title', 'order']:
             filters['sort_by'] = sort_by
         
-        sort_order = request.args.get('sort_order', 'desc')
+        sort_order = request.args.get('sort_order', 'asc' if sort_by == 'order' else 'desc')
         if sort_order in ['asc', 'desc']:
             filters['sort_order'] = sort_order
         

@@ -19,6 +19,64 @@ body {
     background-color: var(--light-bg);
 }
 
+/* Drag and Drop Styles */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #f0f0f0;
+    border: 2px dashed var(--primary-color);
+}
+
+.sortable-chosen {
+    cursor: grabbing !important;
+    transform: scale(1.02);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.sortable-drag {
+    cursor: grabbing !important;
+    opacity: 0 !important;
+}
+
+/* Drag handle styles */
+.drag-handle {
+    cursor: grab;
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.drag-handle:hover {
+    color: var(--primary-color) !important;
+    transform: scale(1.1);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-handle i {
+    font-size: 1.5rem;
+}
+
+/* Visual feedback during drag */
+.prompt-card.dragging {
+    transform: rotate(2deg);
+    transition: none;
+}
+
+/* Prompt card drag state enhancements */
+.prompt-card.sortable-chosen {
+    background-color: var(--light-bg);
+    border-color: var(--primary-color);
+}
+
+/* Ensure proper layout during drag */
+#promptsList {
+    min-height: 100px;
+}
+
 /* Card Enhancements */
 .card {
     border: 1px solid var(--border-color);

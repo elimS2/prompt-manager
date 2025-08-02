@@ -47,6 +47,7 @@ class PromptListManager {
         this.initPanelToggleButton();
         this.restorePanelVisibility();
         this.initTagFilters();
+        this.initDragAndDrop();
     }
     
     /**
@@ -1085,6 +1086,91 @@ class PromptListManager {
                 this.toggleCombinedPanelBtn.classList.remove('active');
             }
         }
+    }
+    
+    /**
+     * Initialize drag and drop functionality
+     */
+    initDragAndDrop() {
+        const promptsList = document.getElementById('promptsList');
+        if (!promptsList) {
+            return;
+        }
+        
+        // Initialize SortableJS
+        this.sortable = Sortable.create(promptsList, {
+            animation: 150,
+            handle: '.drag-handle',  // Only allow dragging from the handle
+            draggable: '.col-12',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            
+            // Store initial order
+            onStart: (evt) => {
+                // Add visual feedback
+                evt.item.style.opacity = '0.4';
+                document.body.style.cursor = 'grabbing';
+            },
+            
+            // Restore visual state
+            onEnd: (evt) => {
+                evt.item.style.opacity = '';
+                document.body.style.cursor = '';
+                
+                // Only save if position actually changed
+                if (evt.oldIndex !== evt.newIndex) {
+                    this.savePromptsOrder();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Save the new order of prompts to the server
+     */
+    savePromptsOrder() {
+        // Get all prompt cards in their current order
+        const promptCards = document.querySelectorAll('.prompt-card');
+        const orderedIds = [];
+        
+        promptCards.forEach(card => {
+            const checkbox = card.querySelector('.prompt-checkbox');
+            if (checkbox) {
+                orderedIds.push(parseInt(checkbox.value));
+            }
+        });
+        
+        // Show loading state
+        this.showToast('Saving new order...', 'info');
+        
+        // Send the new order to the server
+        fetch('/prompts/reorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ordered_ids: orderedIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.showToast('Order saved successfully!', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to save order');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving order:', error);
+            this.showToast('Failed to save order. Please try again.', 'error');
+            
+            // Optionally reload to restore original order
+            if (confirm('Failed to save the new order. Reload page to restore original order?')) {
+                window.location.reload();
+            }
+        });
     }
 }
 

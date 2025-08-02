@@ -23,6 +23,7 @@ class Prompt(BaseModel):
     description = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    order = db.Column(db.Integer, nullable=False, default=0, index=True)
     
     # Relationships
     tags = db.relationship('Tag', secondary=prompt_tags, lazy='subquery',
@@ -41,6 +42,7 @@ class Prompt(BaseModel):
             'description': self.description,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'is_active': self.is_active,
+            'order': self.order,
             'tags': [tag.to_dict() for tag in self.tags]
         })
         return base_dict

@@ -2,7 +2,7 @@
 Web controller for prompt management.
 Handles HTTP requests for the web interface.
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.services import PromptService, TagService, MergeService
 from app.controllers.base import BaseController
 from app.utils.tag_utils import parse_tag_string, format_tags_for_display
@@ -239,6 +239,40 @@ def duplicate(id):
     except ValueError as e:
         flash(str(e), 'error')
         return redirect(request.referrer or url_for('prompt.index'))
+
+
+@prompt_bp.route('/prompts/reorder', methods=['POST'])
+@BaseController.handle_service_error
+def reorder():
+    """Update the order of prompts after drag and drop."""
+    try:
+        # Get the ordered list of prompt IDs from the request
+        data = request.get_json()
+        
+        if not data or 'ordered_ids' not in data:
+            return {'success': False, 'error': 'No ordered IDs provided'}, 400
+        
+        ordered_ids = data['ordered_ids']
+        
+        # Validate that all IDs are integers
+        try:
+            ordered_ids = [int(id) for id in ordered_ids]
+        except (ValueError, TypeError):
+            return {'success': False, 'error': 'Invalid ID format'}, 400
+        
+        # Update the order in the database
+        success = prompt_service.reorder_prompts(ordered_ids)
+        
+        if success:
+            return {'success': True, 'message': 'Order updated successfully'}
+        else:
+            return {'success': False, 'error': 'Failed to update order'}, 500
+            
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in reorder endpoint: {str(e)}")
+        return {'success': False, 'error': str(e)}, 500
 
 
 @prompt_bp.route('/prompts/merge', methods=['GET', 'POST'])

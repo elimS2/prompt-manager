@@ -386,15 +386,18 @@ class PromptRepository(BaseRepository[Prompt]):
         Returns:
             Query with sorting applied
         """
-        # Default sorting by created_at
-        if sort_by == 'created':
+        # Default sorting by order field for consistent drag & drop experience
+        if sort_by == 'order':
+            sort_field = self.model.order
+        elif sort_by == 'created':
             sort_field = self.model.created_at
         elif sort_by == 'updated':
             sort_field = self.model.updated_at
         elif sort_by == 'title':
             sort_field = self.model.title
         else:
-            sort_field = self.model.created_at
+            # Default to order for drag & drop support
+            sort_field = self.model.order
         
         if sort_order == 'asc':
             return query.order_by(sort_field.asc())
@@ -505,3 +508,42 @@ class PromptRepository(BaseRepository[Prompt]):
             query = query.filter_by(**model_filters)
         
         return query
+    
+    def update_order(self, prompt_id: int, new_order: int) -> bool:
+        """
+        Update the order of a specific prompt.
+        
+        Args:
+            prompt_id: ID of the prompt to update
+            new_order: New order value
+            
+        Returns:
+            True if successful, False if prompt not found
+        """
+        prompt = self.get_by_id(prompt_id)
+        if prompt:
+            prompt.order = new_order
+            self.commit()
+            return True
+        return False
+    
+    def bulk_update_order(self, order_mapping: Dict[int, int]) -> bool:
+        """
+        Update order for multiple prompts at once.
+        
+        Args:
+            order_mapping: Dictionary mapping prompt_id to new order value
+            
+        Returns:
+            True if all updates successful
+        """
+        try:
+            for prompt_id, new_order in order_mapping.items():
+                prompt = self.get_by_id(prompt_id)
+                if prompt:
+                    prompt.order = new_order
+            self.commit()
+            return True
+        except Exception:
+            self.rollback()
+            return False

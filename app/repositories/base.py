@@ -75,8 +75,8 @@ class BaseRepository(Generic[ModelType]):
         }
     
     def get_paginated_with_sorting(self, page: int = 1, per_page: int = 20, 
-                                 sort_by: str = 'created', sort_order: str = 'desc',
-                                 **filters) -> Dict[str, Any]:
+                                  sort_by: str = 'order', sort_order: str = 'asc',
+                                  **filters) -> Dict[str, Any]:
         """
         Get paginated results with sorting.
         
@@ -122,15 +122,18 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             Query with sorting applied
         """
-        # Default sorting by created_at
-        if sort_by == 'created':
+        # Check if model has the field
+        if hasattr(self.model, sort_by):
+            sort_field = getattr(self.model, sort_by)
+        elif sort_by == 'created':
             sort_field = self.model.created_at
-        elif sort_by == 'updated':
+        elif sort_by == 'updated' and hasattr(self.model, 'updated_at'):
             sort_field = self.model.updated_at
-        elif sort_by == 'title':
+        elif sort_by == 'title' and hasattr(self.model, 'title'):
             sort_field = self.model.title
         else:
-            sort_field = self.model.created_at
+            # Default to created_at if available
+            sort_field = self.model.created_at if hasattr(self.model, 'created_at') else self.model.id
         
         if sort_order == 'asc':
             return query.order_by(sort_field.asc())

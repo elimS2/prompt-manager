@@ -213,7 +213,7 @@ class PromptService:
                 - is_active: bool - Filter by active status
                 - created_after: datetime - Filter by creation date
                 - created_before: datetime - Filter by creation date
-                - sort_by: str - 'created', 'updated', 'title'
+                - sort_by: str - 'created', 'updated', 'title', 'order'
                 - sort_order: str - 'asc' or 'desc'
                 - page: int - Page number for pagination
                 - per_page: int - Items per page
@@ -222,8 +222,8 @@ class PromptService:
             List of Prompt instances or paginated result dict
         """
         # Extract sorting parameters (not model fields)
-        sort_by = filters.pop('sort_by', 'created')
-        sort_order = filters.pop('sort_order', 'desc')
+        sort_by = filters.pop('sort_by', 'order')  # Default to order for drag & drop
+        sort_order = filters.pop('sort_order', 'asc')  # Default to ascending order
         
         # Handle tag filtering by names
         if 'tags' in filters and filters['tags']:
@@ -396,3 +396,36 @@ class PromptService:
             'inactive_prompts': inactive,
             'active_percentage': (active / total * 100) if total > 0 else 0
         }
+    
+    def update_prompt_order(self, prompt_id: int, new_order: int) -> bool:
+        """
+        Update the order of a single prompt.
+        
+        Args:
+            prompt_id: ID of the prompt to update
+            new_order: New order value
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.prompt_repo.update_order(prompt_id, new_order)
+    
+    def reorder_prompts(self, ordered_ids: List[int]) -> bool:
+        """
+        Reorder multiple prompts based on a list of IDs in the desired order.
+        
+        Args:
+            ordered_ids: List of prompt IDs in the desired order
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Create order mapping: ID -> new order (position in list)
+            order_mapping = {prompt_id: index for index, prompt_id in enumerate(ordered_ids)}
+            return self.prompt_repo.bulk_update_order(order_mapping)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error reordering prompts: {str(e)}")
+            return False
