@@ -26,6 +26,11 @@ class PromptListManager {
         this.charCountSpan = document.getElementById('charCount');
         this.wordCountSpan = document.getElementById('wordCount');
         
+        // Panel toggle functionality
+        this.toggleCombinedPanelBtn = document.getElementById('toggleCombinedPanelBtn');
+        this.isPanelVisible = false;
+        this.panelVisibilityPreference = localStorage.getItem('combinedPanelVisible') === 'true';
+        
         this.init();
     }
     
@@ -39,6 +44,8 @@ class PromptListManager {
         this.initKeyboardShortcuts();
         this.createActionButtons();
         this.initCombinedContentPanel();
+        this.initPanelToggleButton();
+        this.restorePanelVisibility();
     }
     
     /**
@@ -204,14 +211,21 @@ class PromptListManager {
     updateCombinedContentPanel() {
         const selectedCount = this.selectedPrompts.size;
         
-        if (selectedCount === 0) {
+        // Only show panel if it's visible
+        if (!this.isPanelVisible) {
             this.hideCombinedContentPanel();
             return;
         }
         
         this.showCombinedContentPanel();
-        this.updateCombinedContent();
-        this.updateSelectedCount(selectedCount);
+        
+        if (selectedCount === 0) {
+            // Show empty state message
+            this.showEmptyPanelState();
+        } else {
+            this.updateCombinedContent();
+            this.updateSelectedCount(selectedCount);
+        }
     }
     
     /**
@@ -221,6 +235,7 @@ class PromptListManager {
         if (this.combinedContentPanel) {
             this.combinedContentPanel.style.display = 'block';
             this.combinedContentPanel.classList.add('fade-in');
+            this.isPanelVisible = true;
         }
     }
     
@@ -234,6 +249,7 @@ class PromptListManager {
                 this.combinedContentPanel.style.display = 'none';
                 this.combinedContentPanel.classList.remove('slide-up');
             }, 300);
+            this.isPanelVisible = false;
         }
     }
     
@@ -269,6 +285,7 @@ class PromptListManager {
         if (selectedContents.length > 0) {
             const combinedContent = this.formatCombinedContent(selectedContents);
             this.combinedContentTextarea.value = combinedContent;
+            this.combinedContentTextarea.placeholder = 'Edit combined content here...';
             this.updateTextCounts();
         }
     }
@@ -280,6 +297,23 @@ class PromptListManager {
         if (this.selectedCountBadge) {
             this.selectedCountBadge.textContent = count;
         }
+    }
+    
+    /**
+     * Show empty state in combined content panel
+     */
+    showEmptyPanelState() {
+        if (this.combinedContentTextarea) {
+            this.combinedContentTextarea.value = '';
+            this.combinedContentTextarea.placeholder = 'Select prompts to see their combined content here...';
+        }
+        if (this.selectedCountBadge) {
+            this.selectedCountBadge.textContent = '0';
+        }
+        if (this.copyCombinedBtn) {
+            this.copyCombinedBtn.disabled = true;
+        }
+        this.updateTextCounts();
     }
     
     /**
@@ -863,6 +897,12 @@ class PromptListManager {
             this.clearSelectionAndClipboard();
         }
         
+        // Ctrl/Cmd + P for toggle combined content panel
+        if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+            event.preventDefault();
+            this.toggleCombinedContentPanel();
+        }
+        
         // Escape to close any open content previews
         if (event.key === 'Escape') {
             this.closeAllContentPreviews();
@@ -952,6 +992,66 @@ class PromptListManager {
         toastElement.addEventListener('hidden.bs.toast', function() {
             toastElement.remove();
         });
+    }
+
+    /**
+     * Initialize panel toggle button
+     */
+    initPanelToggleButton() {
+        if (this.toggleCombinedPanelBtn) {
+            this.toggleCombinedPanelBtn.addEventListener('click', () => this.toggleCombinedContentPanel());
+        }
+    }
+
+    /**
+     * Toggle combined content panel visibility
+     */
+    toggleCombinedContentPanel() {
+        this.isPanelVisible = !this.isPanelVisible;
+        this.savePanelVisibilityPreference();
+
+        if (this.isPanelVisible) {
+            this.showCombinedContentPanel();
+            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Panel';
+            this.toggleCombinedPanelBtn.setAttribute('title', 'Hide combined content panel');
+            this.toggleCombinedPanelBtn.classList.add('active');
+            this.updateCombinedContentPanel(); // Update content if there are selected prompts
+        } else {
+            this.hideCombinedContentPanel();
+            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show Panel';
+            this.toggleCombinedPanelBtn.setAttribute('title', 'Show combined content panel');
+            this.toggleCombinedPanelBtn.classList.remove('active');
+        }
+        
+        // Reinitialize tooltip
+        this.reinitializeTooltip(this.toggleCombinedPanelBtn);
+    }
+
+    /**
+     * Save panel visibility preference to localStorage
+     */
+    savePanelVisibilityPreference() {
+        localStorage.setItem('combinedPanelVisible', this.isPanelVisible);
+    }
+
+    /**
+     * Restore panel visibility preference from localStorage
+     */
+    restorePanelVisibility() {
+        if (this.toggleCombinedPanelBtn) {
+            this.isPanelVisible = this.panelVisibilityPreference;
+            if (this.isPanelVisible) {
+                this.showCombinedContentPanel();
+                this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Panel';
+                this.toggleCombinedPanelBtn.setAttribute('title', 'Hide combined content panel');
+                this.toggleCombinedPanelBtn.classList.add('active');
+            } else {
+                this.hideCombinedContentPanel();
+                this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show Panel';
+                this.toggleCombinedPanelBtn.setAttribute('title', 'Show combined content panel');
+                this.toggleCombinedPanelBtn.classList.remove('active');
+            }
+        }
     }
 }
 

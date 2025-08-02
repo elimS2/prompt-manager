@@ -486,6 +486,16 @@ pre {
     #wordCount {
         font-size: 0.75rem;
     }
+    
+    /* Panel toggle button mobile adjustments */
+    #toggleCombinedPanelBtn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    #toggleCombinedPanelBtn i {
+        margin-right: 0.25rem;
+    }
 }
 
 /* Animations */
@@ -708,6 +718,31 @@ pre {
 #clearCombinedBtn:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Panel Toggle Button Styles */
+#toggleCombinedPanelBtn {
+    transition: all 0.2s ease;
+    border-color: var(--info-color);
+    color: var(--info-color);
+}
+
+#toggleCombinedPanelBtn:hover {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#toggleCombinedPanelBtn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+#toggleCombinedPanelBtn.active {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+    color: white;
 }
 
 /* Character and word count styles */
