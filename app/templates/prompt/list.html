@@ -303,13 +303,7 @@
                             </div>
                             
                             <!-- Footer with metadata -->
-                            {% if prompt.updated_at != prompt.created_at %}
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        Updated {{ prompt.updated_at.strftime('%Y-%m-%d') }}
-                                    </small>
-                                </div>
-                            {% endif %}
+                            <!-- Removed updated date display -->
                         </div>
                     </div>
                 </div>
