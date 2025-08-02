@@ -156,8 +156,9 @@ class BaseRepository(Generic[ModelType]):
                 if value:
                     query = query.filter(self.model.id.in_(value))
             elif hasattr(self.model, key):
-                # Only add filters that are actual model fields
-                model_filters[key] = value
+                # Only add filters that are actual model fields and not None
+                if value is not None:
+                    model_filters[key] = value
         
         # Apply model field filters
         if model_filters:

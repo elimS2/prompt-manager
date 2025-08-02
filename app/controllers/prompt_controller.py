@@ -33,6 +33,8 @@ def index():
     # Get popular tags for sidebar
     popular_tags = tag_service.get_popular_tags(limit=10)
     
+
+    
     return render_template('prompt/list.html',
                          prompts=result.get('items', []),
                          pagination=result,

@@ -137,17 +137,27 @@ class BaseController:
         if tags:
             filters['tags'] = tags
         
-        # Active status - default to True (Active) if not specified
+        # Active status filter
         is_active = request.args.get('is_active')
         if is_active is not None:
-            if is_active == '':
+            if is_active.lower() == 'all':
                 # "All" option selected - don't filter by active status
-                pass
+                filters['is_active'] = None
+                filters['is_active_explicitly_set'] = True
+            elif is_active.lower() == 'true':
+                filters['is_active'] = True
+                filters['is_active_explicitly_set'] = True
+            elif is_active.lower() == 'false':
+                filters['is_active'] = False
+                filters['is_active_explicitly_set'] = True
             else:
-                filters['is_active'] = is_active.lower() == 'true'
+                # Invalid value - default to active
+                filters['is_active'] = True
+                filters['is_active_explicitly_set'] = False
         else:
-            # Default to showing active prompts
+            # Default to showing active prompts when no filter is specified
             filters['is_active'] = True
+            filters['is_active_explicitly_set'] = False
         
         # Date filters
         created_after = request.args.get('created_after')

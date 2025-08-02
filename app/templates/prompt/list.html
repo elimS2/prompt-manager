@@ -23,8 +23,8 @@
                     <div class="mb-3">
                         <label class="form-label">Status</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="is_active" value="" 
-                                   {% if filters.get('is_active') is none %}checked{% endif %}>
+                            <input class="form-check-input" type="radio" name="is_active" value="all" 
+                                   {% if filters.get('is_active') == None %}checked{% endif %}>
                             <label class="form-check-label">All</label>
                         </div>
                         <div class="form-check">
@@ -60,7 +60,7 @@
                 </div>
                 
                 <!-- Clear Filters Button -->
-                {% if filters.tags or filters.search or filters.is_active is not none %}
+                {% if filters.tags or filters.search or filters.is_active is not none or filters.is_active == None %}
                     <div class="mb-3">
                         <a href="{{ url_for('prompt.index') }}" class="btn btn-outline-secondary btn-sm w-100">
                             <i class="bi bi-x-circle me-1"></i>Clear All Filters
@@ -89,7 +89,7 @@
         </div>
         
         <!-- Active Filters Display -->
-        {% if filters.tags or filters.search or filters.is_active is not none %}
+        {% if filters.tags or filters.search or filters.is_active is not none or filters.is_active == None %}
             <div class="card mb-3">
                 <div class="card-body py-2">
                     <div class="d-flex justify-content-between align-items-center">
@@ -113,9 +113,23 @@
                                        class="text-white text-decoration-none ms-1">×</a>
                                 </span>
                             {% endif %}
-                            {% if filters.is_active is not none %}
+                            {% if filters.is_active == True %}
                                 <span class="badge bg-secondary me-1">
-                                    Status: {% if filters.is_active %}Active{% else %}Inactive{% endif %}
+                                    Status: Active
+                                    <a href="javascript:void(0)" 
+                                       onclick="removeStatusFilter()"
+                                       class="text-white text-decoration-none ms-1">×</a>
+                                </span>
+                            {% elif filters.is_active == False %}
+                                <span class="badge bg-secondary me-1">
+                                    Status: Inactive
+                                    <a href="javascript:void(0)" 
+                                       onclick="removeStatusFilter()"
+                                       class="text-white text-decoration-none ms-1">×</a>
+                                </span>
+                            {% elif filters.is_active == None %}
+                                <span class="badge bg-secondary me-1">
+                                    Status: All
                                     <a href="javascript:void(0)" 
                                        onclick="removeStatusFilter()"
                                        class="text-white text-decoration-none ms-1">×</a>

@@ -199,7 +199,7 @@ class PromptRepository(BaseRepository[Prompt]):
             query = query.join(prompt_tags).filter(prompt_tags.c.tag_id.in_(filters['tags']))
         
         # Active filter
-        if 'is_active' in filters:
+        if 'is_active' in filters and filters['is_active'] is not None:
             query = query.filter(self.model.is_active == filters['is_active'])
         
         # Date filters
@@ -248,7 +248,7 @@ class PromptRepository(BaseRepository[Prompt]):
             query = query.join(prompt_tags).filter(prompt_tags.c.tag_id.in_(filters['tags']))
         
         # Active filter
-        if 'is_active' in filters:
+        if 'is_active' in filters and filters['is_active'] is not None:
             query = query.filter(self.model.is_active == filters['is_active'])
         
         # Date filters

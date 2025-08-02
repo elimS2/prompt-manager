@@ -1059,9 +1059,11 @@ class PromptListManager {
 document.addEventListener('DOMContentLoaded', function() {
     // Only initialize if we're on the prompts list page
     if (document.querySelector('.prompt-card')) {
-        new PromptListManager();
+        window.promptListManager = new PromptListManager();
     }
 });
 
 // Export for potential use in other modules
-window.PromptListManager = PromptListManager; 
+window.PromptListManager = PromptListManager;
+
+ 
