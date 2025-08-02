@@ -42,6 +42,12 @@ SAMPLE_PROMPTS = [
         'content': 'Explain the following error message in simple terms. Provide the most common causes and step-by-step solutions.',
         'description': 'Prompt for getting clear explanations of error messages',
         'tags': ['debugging', 'errors', 'troubleshooting']
+    },
+    {
+        'title': 'Commit Message',
+        'content': 'Write a clear and descriptive commit message for the following changes. Follow conventional commit format: type(scope): description. Include a brief summary of what was changed and why.',
+        'description': 'Template for generating clear and descriptive commit messages',
+        'tags': ['git', 'commit', 'version-control']
     }
 ]
 
@@ -52,7 +58,10 @@ TAG_COLORS = {
     'api': '#8B5CF6',
     'testing': '#EF4444',
     'sql': '#3B82F6',
-    'debugging': '#EC4899'
+    'debugging': '#EC4899',
+    'git': '#F05032',
+    'commit': '#10B981',
+    'version-control': '#3B82F6'
 }
 
 

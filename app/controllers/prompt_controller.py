@@ -5,6 +5,7 @@ Handles HTTP requests for the web interface.
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.services import PromptService, TagService, MergeService
 from app.controllers.base import BaseController
+import re
 
 
 # Create blueprint
@@ -14,6 +15,27 @@ prompt_bp = Blueprint('prompt', __name__)
 prompt_service = PromptService()
 tag_service = TagService()
 merge_service = MergeService()
+
+
+def highlight_search(text, query):
+    """Highlight search query in text."""
+    if not text or not query:
+        return text
+    
+    # Escape special regex characters
+    escaped_query = re.escape(query)
+    # Create regex pattern for case-insensitive matching
+    pattern = re.compile(f'({escaped_query})', re.IGNORECASE)
+    
+    # Replace matches with highlighted version
+    highlighted = pattern.sub(r'<mark class="search-highlight">\1</mark>', str(text))
+    return highlighted
+
+
+# Register template filter
+def register_filters(app):
+    """Register template filters."""
+    app.jinja_env.filters['highlight_search'] = highlight_search
 
 
 @prompt_bp.route('/')
@@ -33,11 +55,17 @@ def index():
     # Get popular tags for sidebar
     popular_tags = tag_service.get_popular_tags(limit=10)
     
-
+    # Handle result format (list or dict with pagination)
+    if isinstance(result, dict):
+        prompts = result.get('items', [])
+        pagination = result
+    else:
+        prompts = result
+        pagination = None
     
     return render_template('prompt/list.html',
-                         prompts=result.get('items', []),
-                         pagination=result,
+                         prompts=prompts,
+                         pagination=pagination,
                          filters=filters,
                          popular_tags=popular_tags)
 
@@ -50,11 +78,6 @@ def create():
         try:
             # Validate required fields
             data = BaseController.get_request_data()
-            
-            # Log received data for debugging
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.debug(f"Received form data: {data}")
             
             # Basic validation
             title = data.get('title', '').strip()
@@ -83,20 +106,10 @@ def create():
             # Create prompt
             prompt = prompt_service.create_prompt(data)
             
-            logger.debug(f"Prompt created with ID: {prompt.id}")
-            
             flash('Prompt created successfully!', 'success')
-            redirect_url = url_for('prompt.view', id=prompt.id)
-            logger.debug(f"Redirecting to: {redirect_url}")
-            
-            return redirect(redirect_url)
+            return redirect(url_for('prompt.view', id=prompt.id))
             
         except Exception as e:
-            # Log the error for debugging
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error creating prompt: {str(e)}", exc_info=True)
-            
             # Show user-friendly error
             flash(f'Failed to create prompt: {str(e)}', 'error')
             return redirect(url_for('prompt.create'))

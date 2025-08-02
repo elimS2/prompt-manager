@@ -46,19 +46,47 @@ class PromptRepository(BaseRepository[Prompt]):
         if not query:
             return []
         
-        search_term = f'%{query}%'
-        base_query = self.model.query.filter(
-            or_(
-                self.model.title.ilike(search_term),
-                self.model.content.ilike(search_term),
-                self.model.description.ilike(search_term)
-            )
+        # Normalize query for better matching
+        query = query.strip().lower()
+        
+        # Create multiple search patterns for better matching
+        search_patterns = [
+            f'%{query}%',  # Contains query anywhere
+            f'{query}%',   # Starts with query
+            f'% {query}%', # Word boundary match
+            f'%{query} %'  # Word boundary match
+        ]
+        
+        # Build search conditions
+        search_conditions = []
+        for pattern in search_patterns:
+            search_conditions.extend([
+                self.model.title.ilike(pattern),
+                self.model.content.ilike(pattern),
+                self.model.description.ilike(pattern)
+            ])
+        
+        # Also search in tags
+        from app.models import Tag, prompt_tags
+        tag_search = (
+            self.model.query
+            .join(prompt_tags)
+            .join(Tag)
+            .filter(Tag.name.ilike(f'%{query}%'))
         )
         
-        if not include_inactive:
-            base_query = base_query.filter_by(is_active=True)
+        # Main search query
+        base_query = self.model.query.filter(or_(*search_conditions))
         
-        return base_query.all()
+        # Combine with tag search
+        combined_query = base_query.union(tag_search)
+        
+        # Apply active filter if needed
+        if not include_inactive:
+            combined_query = combined_query.filter(self.model.is_active == True)
+        
+        # Return distinct results ordered by relevance
+        return combined_query.distinct().order_by(self.model.title).all()
     
     def get_by_tags(self, tag_ids: List[int], match_all: bool = False, is_active: Optional[bool] = None) -> List[Prompt]:
         """
@@ -189,17 +217,55 @@ class PromptRepository(BaseRepository[Prompt]):
         """
         query = self.model.query
         
-        # Search filter
+        # Search filter with enhanced algorithm
         if 'search' in filters and filters['search']:
-            search_term = f"%{filters['search']}%"
-            query = query.filter(
-                or_(
-                    self.model.title.ilike(search_term),
-                    self.model.content.ilike(search_term),
-                    self.model.description.ilike(search_term)
-                )
+            search_query = filters['search'].strip().lower()
+            
+            # Create multiple search patterns for better matching
+            search_patterns = [
+                f'%{search_query}%',  # Contains query anywhere
+                f'{search_query}%',   # Starts with query
+                f'% {search_query}%', # Word boundary match
+                f'%{search_query} %'  # Word boundary match
+            ]
+            
+            # Build search conditions
+            search_conditions = []
+            for pattern in search_patterns:
+                search_conditions.extend([
+                    self.model.title.ilike(pattern),
+                    self.model.content.ilike(pattern),
+                    self.model.description.ilike(pattern)
+                ])
+            
+            # Also search in tags
+            from app.models import Tag
+            tag_search = (
+                self.model.query
+                .join(prompt_tags)
+                .join(Tag)
+                .filter(Tag.name.ilike(f'%{search_query}%'))
             )
+            
+            # Main search query
+            base_query = self.model.query.filter(or_(*search_conditions))
+            
+            # Combine with tag search
+            combined_query = base_query.union(tag_search)
+            
+            # Apply other filters to combined query
+            if 'is_active' in filters and filters['is_active'] is not None:
+                combined_query = combined_query.filter(self.model.is_active == filters['is_active'])
+            
+            if 'created_after' in filters:
+                combined_query = combined_query.filter(self.model.created_at >= filters['created_after'])
+            
+            if 'created_before' in filters:
+                combined_query = combined_query.filter(self.model.created_at <= filters['created_before'])
+            
+            return combined_query.distinct().all()
         
+        # If no search, apply other filters normally
         # Tag filter
         if 'tags' in filters and filters['tags']:
             query = query.join(prompt_tags).filter(prompt_tags.c.tag_id.in_(filters['tags']))
@@ -238,16 +304,55 @@ class PromptRepository(BaseRepository[Prompt]):
         """
         query = self.model.query
         
-        # Search filter
+        # Search filter with enhanced algorithm
         if 'search' in filters and filters['search']:
-            search_term = f"%{filters['search']}%"
-            query = query.filter(
-                or_(
-                    self.model.title.ilike(search_term),
-                    self.model.content.ilike(search_term),
-                    self.model.description.ilike(search_term)
-                )
+            search_query = filters['search'].strip().lower()
+            
+            # Create multiple search patterns for better matching
+            search_patterns = [
+                f'%{search_query}%',  # Contains query anywhere
+                f'{search_query}%',   # Starts with query
+                f'% {search_query}%', # Word boundary match
+                f'%{search_query} %'  # Word boundary match
+            ]
+            
+            # Build search conditions
+            search_conditions = []
+            for pattern in search_patterns:
+                search_conditions.extend([
+                    self.model.title.ilike(pattern),
+                    self.model.content.ilike(pattern),
+                    self.model.description.ilike(pattern)
+                ])
+            
+            # Also search in tags
+            from app.models import Tag
+            tag_search = (
+                self.model.query
+                .join(prompt_tags)
+                .join(Tag)
+                .filter(Tag.name.ilike(f'%{search_query}%'))
             )
+            
+            # Main search query
+            base_query = self.model.query.filter(or_(*search_conditions))
+            
+            # Combine with tag search
+            combined_query = base_query.union(tag_search)
+            
+            # Apply other filters to combined query
+            if 'is_active' in filters and filters['is_active'] is not None:
+                combined_query = combined_query.filter(self.model.is_active == filters['is_active'])
+            
+            if 'created_after' in filters:
+                combined_query = combined_query.filter(self.model.created_at >= filters['created_after'])
+            
+            if 'created_before' in filters:
+                combined_query = combined_query.filter(self.model.created_at <= filters['created_before'])
+            
+            # Apply sorting and return
+            combined_query = self._apply_sorting(combined_query, sort_by, sort_order)
+            return combined_query.distinct().all()
         
         # Tag filter
         if 'tags' in filters and filters['tags']:
@@ -329,3 +434,74 @@ class PromptRepository(BaseRepository[Prompt]):
             self.commit()
             return True
         return False
+    
+    def _apply_filters(self, query, filters: Dict[str, Any]):
+        """
+        Apply filters to query, handling search and other special filters.
+        
+        Args:
+            query: SQLAlchemy query
+            filters: Dictionary of filters
+            
+        Returns:
+            Query with filters applied
+        """
+        from sqlalchemy import or_
+        from app.models import prompt_tags, Tag
+        
+        # Handle search filter
+        if 'search' in filters and filters['search']:
+            search_query = filters['search'].strip().lower()
+            
+            # Create multiple search patterns for better matching
+            search_patterns = [
+                f'%{search_query}%',  # Contains query anywhere
+                f'{search_query}%',   # Starts with query
+                f'% {search_query}%', # Word boundary match
+                f'{search_query} %'   # Word boundary match
+            ]
+            
+            # Build search conditions
+            search_conditions = []
+            for pattern in search_patterns:
+                search_conditions.extend([
+                    self.model.title.ilike(pattern),
+                    self.model.content.ilike(pattern),
+                    self.model.description.ilike(pattern)
+                ])
+            
+            # Also search in tags
+            tag_search = (
+                self.model.query
+                .join(prompt_tags)
+                .join(Tag)
+                .filter(Tag.name.ilike(f'%{search_query}%'))
+            )
+            
+            # Main search query
+            base_query = self.model.query.filter(or_(*search_conditions))
+            
+            # Combine with tag search
+            query = base_query.union(tag_search)
+        
+        # Handle other filters manually (don't use parent method for search)
+        # Handle special filters that are not model fields
+        model_filters = {}
+        for key, value in filters.items():
+            if key == 'search':
+                # Already handled above
+                continue
+            elif key == 'ids':
+                # Handle ID filtering
+                if value:
+                    query = query.filter(self.model.id.in_(value))
+            elif hasattr(self.model, key):
+                # Only add filters that are actual model fields and not None
+                if value is not None:
+                    model_filters[key] = value
+        
+        # Apply model field filters
+        if model_filters:
+            query = query.filter_by(**model_filters)
+        
+        return query

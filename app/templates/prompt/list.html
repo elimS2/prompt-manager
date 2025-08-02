@@ -186,9 +186,10 @@
         
         <!-- Prompts List -->
         <div class="row" id="promptsList">
-            {% for prompt in prompts %}
-                <div class="col-12 mb-3">
-                    <div class="card prompt-card {% if not prompt.is_active %}inactive-prompt{% endif %}">
+            {% if prompts %}
+                {% for prompt in prompts %}
+                    <div class="col-12 mb-3">
+                        <div class="card prompt-card {% if not prompt.is_active %}inactive-prompt{% endif %}">
                         <div class="card-body py-3">
                             <!-- Header with checkbox, title and actions -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -200,7 +201,13 @@
                                            data-bs-toggle="tooltip" 
                                            title="Click to select and copy content">
                                     <label class="form-check-label" for="prompt-{{ prompt.id }}">
-                                        <h5 class="card-title mb-0">{{ prompt.title }}</h5>
+                                        <h5 class="card-title mb-0">
+                                            {% if filters.get('search') %}
+                                                {{ prompt.title | highlight_search(filters.get('search')) | safe }}
+                                            {% else %}
+                                                {{ prompt.title }}
+                                            {% endif %}
+                                        </h5>
                                     </label>
                                 </div>
                                 <div class="prompt-actions-group" role="group">
@@ -255,7 +262,13 @@
                             
                             <!-- Description -->
                             {% if prompt.description %}
-                                <p class="card-text text-muted small mb-2">{{ prompt.description }}</p>
+                                <p class="card-text text-muted small mb-2">
+                                    {% if filters.get('search') %}
+                                        {{ prompt.description | highlight_search(filters.get('search')) | safe }}
+                                    {% else %}
+                                        {{ prompt.description }}
+                                    {% endif %}
+                                </p>
                             {% endif %}
                             
                             <!-- Tags -->
@@ -274,7 +287,13 @@
                                     <small class="text-muted">{{ prompt.content|length }} characters</small>
                                 </div>
                                 <div class="content-body">
-                                    <pre class="content-text">{{ prompt.content }}</pre>
+                                    <pre class="content-text">
+                                        {% if filters.get('search') %}
+                                            {{ prompt.content | highlight_search(filters.get('search')) | safe }}
+                                        {% else %}
+                                            {{ prompt.content }}
+                                        {% endif %}
+                                    </pre>
                                 </div>
                             </div>
                             
@@ -289,18 +308,48 @@
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             {% else %}
+                <!-- No prompts found -->
                 <div class="col-12">
-                    <div class="text-center py-5">
-                        <i class="bi bi-chat-text display-1 text-muted"></i>
-                        <h3 class="text-muted mt-3">No prompts found</h3>
-                        <p class="text-muted">Create your first prompt to get started!</p>
-                        <a href="{{ url_for('prompt.create') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-2"></i>Create New Prompt
-                        </a>
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-search display-1 text-muted mb-3"></i>
+                            <h4 class="text-muted">No prompts found</h4>
+                            <p class="text-muted mb-3">
+                                {% if filters.get('search') %}
+                                    No prompts match your search for "{{ filters.get('search') }}".
+                                {% else %}
+                                    No prompts match your current filters.
+                                {% endif %}
+                            </p>
+                            <div class="row justify-content-center">
+                                <div class="col-md-8">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Search Tips:</h6>
+                                            <ul class="list-unstyled mb-0 text-start">
+                                                <li><i class="bi bi-check-circle text-success me-2"></i>Try different keywords</li>
+                                                <li><i class="bi bi-check-circle text-success me-2"></i>Check your spelling</li>
+                                                <li><i class="bi bi-check-circle text-success me-2"></i>Use broader search terms</li>
+                                                <li><i class="bi bi-check-circle text-success me-2"></i>Try searching by tags</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{{ url_for('prompt.index') }}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-left me-1"></i>Clear Filters
+                                </a>
+                                <a href="{{ url_for('prompt.create') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Create New Prompt
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
         
         <!-- Pagination -->
@@ -331,6 +380,37 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Search highlight styling */
+    .search-highlight {
+        background-color: #ffeb3b;
+        color: #000;
+        padding: 0 2px;
+        border-radius: 2px;
+        font-weight: 600;
+    }
+    
+    /* Enhanced search form styling */
+    .search-form {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Search results animation */
+    .prompt-card {
+        transition: all 0.3s ease;
+    }
+    
+    .prompt-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

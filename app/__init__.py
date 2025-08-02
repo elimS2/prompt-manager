@@ -84,11 +84,14 @@ def create_app(config_name='development'):
         return log_request(response)
     
     # Register blueprints
-    from app.controllers.prompt_controller import prompt_bp
+    from app.controllers.prompt_controller import prompt_bp, register_filters
     from app.controllers.api_controller import api_bp
     
     app.register_blueprint(prompt_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    # Register template filters
+    register_filters(app)
     
     # Register error handlers
     register_error_handlers(app)
