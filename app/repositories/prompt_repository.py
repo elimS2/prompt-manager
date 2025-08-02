@@ -98,7 +98,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 self.model.query
                 .join(prompt_tags)
                 .filter(prompt_tags.c.tag_id.in_(tag_ids))
-                .filter_by(is_active=True)
+                .filter(self.model.is_active == True)
                 .distinct()
                 .all()
             )
@@ -200,7 +200,7 @@ class PromptRepository(BaseRepository[Prompt]):
         
         # Active filter
         if 'is_active' in filters:
-            query = query.filter_by(is_active=filters['is_active'])
+            query = query.filter(self.model.is_active == filters['is_active'])
         
         # Date filters
         if 'created_after' in filters:
@@ -249,7 +249,7 @@ class PromptRepository(BaseRepository[Prompt]):
         
         # Active filter
         if 'is_active' in filters:
-            query = query.filter_by(is_active=filters['is_active'])
+            query = query.filter(self.model.is_active == filters['is_active'])
         
         # Date filters
         if 'created_after' in filters:

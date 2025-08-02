@@ -41,7 +41,7 @@ class BaseRepository(Generic[ModelType]):
         query = self.model.query
         
         if filters:
-            query = query.filter_by(**filters)
+            query = self._apply_filters(query, filters)
             
         return query.all()
     
@@ -60,7 +60,7 @@ class BaseRepository(Generic[ModelType]):
         query = self.model.query
         
         if filters:
-            query = query.filter_by(**filters)
+            query = self._apply_filters(query, filters)
         
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         
@@ -93,7 +93,7 @@ class BaseRepository(Generic[ModelType]):
         query = self.model.query
         
         if filters:
-            query = query.filter_by(**filters)
+            query = self._apply_filters(query, filters)
         
         # Apply sorting
         query = self._apply_sorting(query, sort_by, sort_order)
@@ -136,6 +136,34 @@ class BaseRepository(Generic[ModelType]):
             return query.order_by(sort_field.asc())
         else:
             return query.order_by(sort_field.desc())
+    
+    def _apply_filters(self, query, filters: Dict[str, Any]):
+        """
+        Apply filters to query, handling special filters that are not model fields.
+        
+        Args:
+            query: SQLAlchemy query
+            filters: Dictionary of filters
+            
+        Returns:
+            Query with filters applied
+        """
+        # Handle special filters that are not model fields
+        model_filters = {}
+        for key, value in filters.items():
+            if key == 'ids':
+                # Handle ID filtering
+                if value:
+                    query = query.filter(self.model.id.in_(value))
+            elif hasattr(self.model, key):
+                # Only add filters that are actual model fields
+                model_filters[key] = value
+        
+        # Apply model field filters
+        if model_filters:
+            query = query.filter_by(**model_filters)
+        
+        return query
     
     def create(self, **data) -> ModelType:
         """
@@ -213,7 +241,10 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             True if exists, False otherwise
         """
-        return self.model.query.filter_by(**filters).first() is not None
+        query = self.model.query
+        if filters:
+            query = self._apply_filters(query, filters)
+        return query.first() is not None
     
     def count(self, **filters) -> int:
         """
@@ -227,7 +258,7 @@ class BaseRepository(Generic[ModelType]):
         """
         query = self.model.query
         if filters:
-            query = query.filter_by(**filters)
+            query = self._apply_filters(query, filters)
         return query.count()
     
     def find_one(self, **filters) -> Optional[ModelType]:
@@ -240,7 +271,10 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             Model instance or None
         """
-        return self.model.query.filter_by(**filters).first()
+        query = self.model.query
+        if filters:
+            query = self._apply_filters(query, filters)
+        return query.first()
     
     def commit(self):
         """Commit the current transaction."""
