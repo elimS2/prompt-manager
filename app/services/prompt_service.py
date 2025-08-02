@@ -169,6 +169,18 @@ class PromptService:
         """
         return self.prompt_repo.restore(id)
     
+    def archive_prompt(self, id: int) -> bool:
+        """
+        Archive a prompt (set is_active to False).
+        
+        Args:
+            id: Prompt ID
+            
+        Returns:
+            True if archived, False if not found
+        """
+        return self.prompt_repo.soft_delete(id)
+    
     def get_prompt(self, id: int) -> Optional[Prompt]:
         """
         Get a single prompt by ID.

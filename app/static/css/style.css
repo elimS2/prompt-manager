@@ -270,6 +270,111 @@ pre {
     pointer-events: none;
 }
 
+/* Archive Button Styles */
+.btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+    color: #000;
+    background-color: #ffc107;
+    border-color: #ffc107;
+    transform: translateY(-1px);
+}
+
+.btn-outline-warning:disabled {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: transparent;
+}
+
+/* Archive Form Styles */
+.archive-form {
+    display: inline-block;
+}
+
+.archive-form button {
+    transition: all 0.2s ease;
+}
+
+.archive-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Archive Animation */
+@keyframes archiveSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+.archive-slide-out {
+    animation: archiveSlideOut 0.3s ease-out forwards;
+}
+
+/* Inactive Prompt Styles */
+.inactive-prompt {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.inactive-prompt:hover {
+    opacity: 0.9;
+    background-color: #e9ecef;
+}
+
+.inactive-prompt .card-title {
+    color: #6c757d;
+}
+
+.inactive-prompt::before {
+    content: "ARCHIVED";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ffc107;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+/* Restore Button Styles */
+.btn-outline-success {
+    color: #198754;
+    border-color: #198754;
+}
+
+.btn-outline-success:hover {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
+    transform: translateY(-1px);
+}
+
+.restore-form {
+    display: inline-block;
+}
+
+.restore-form button {
+    transition: all 0.2s ease;
+}
+
+.restore-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Empty State */
 .text-center.py-5 {
     background-color: white;

@@ -183,6 +183,20 @@ def restore(id):
         return redirect(url_for('prompt.index'))
 
 
+@prompt_bp.route('/prompts/<int:id>/archive', methods=['POST'])
+@BaseController.handle_service_error
+def archive(id):
+    """Archive a prompt (set as inactive)."""
+    success = prompt_service.archive_prompt(id)
+    
+    if success:
+        flash('Prompt archived successfully!', 'success')
+    else:
+        flash('Prompt not found', 'error')
+    
+    return redirect(url_for('prompt.index'))
+
+
 @prompt_bp.route('/prompts/<int:id>/duplicate', methods=['POST'])
 @BaseController.handle_service_error
 def duplicate(id):

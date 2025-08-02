@@ -64,7 +64,7 @@
         <div class="row" id="promptsList">
             {% for prompt in prompts %}
                 <div class="col-12 mb-3">
-                    <div class="card prompt-card">
+                    <div class="card prompt-card {% if not prompt.is_active %}inactive-prompt{% endif %}">
                         <div class="card-body py-3">
                             <!-- Header with checkbox, title and actions -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -101,6 +101,29 @@
                                        title="Edit prompt">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    {% if prompt.is_active %}
+                                        <form action="{{ url_for('prompt.archive', id=prompt.id) }}" 
+                                              method="POST" 
+                                              class="d-inline archive-form">
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-outline-warning"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Archive prompt">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for('prompt.restore', id=prompt.id) }}" 
+                                              method="POST" 
+                                              class="d-inline restore-form">
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-outline-success"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Restore prompt">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </div>
                             

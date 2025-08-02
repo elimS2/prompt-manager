@@ -10,6 +10,8 @@ class PromptListManager {
         this.toggleButtons = document.querySelectorAll('.toggle-content-btn');
         this.copyButtons = document.querySelectorAll('.copy-content-btn');
         this.filterInputs = document.querySelectorAll('input[name="is_active"]');
+        this.archiveForms = document.querySelectorAll('.archive-form');
+        this.restoreForms = document.querySelectorAll('.restore-form');
         
         this.init();
     }
@@ -19,6 +21,8 @@ class PromptListManager {
         this.initToggleButtons();
         this.initCopyButtons();
         this.initFilterInputs();
+        this.initArchiveForms();
+        this.initRestoreForms();
         this.initKeyboardShortcuts();
     }
     
@@ -161,6 +165,171 @@ class PromptListManager {
     initFilterInputs() {
         this.filterInputs.forEach(input => {
             input.addEventListener('change', (e) => this.handleFilterChange(e));
+        });
+    }
+    
+    /**
+     * Initialize archive forms with enhanced UX
+     */
+    initArchiveForms() {
+        this.archiveForms.forEach(form => {
+            form.addEventListener('submit', (e) => this.handleArchiveSubmit(e));
+        });
+    }
+    
+    /**
+     * Handle archive form submission with confirmation and feedback
+     */
+    handleArchiveSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.currentTarget;
+        const button = form.querySelector('button[type="submit"]');
+        const originalText = button.innerHTML;
+        const promptTitle = form.closest('.prompt-card').querySelector('.card-title').textContent.trim();
+        
+        // Show confirmation dialog
+        if (!confirm(`Are you sure you want to archive "${promptTitle}"?`)) {
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        button.setAttribute('title', 'Archiving...');
+        
+        // Submit form
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new FormData(form)
+        })
+        .then(response => {
+            if (response.ok) {
+                // Show success feedback
+                this.showToast('Prompt archived successfully!', 'success');
+                
+                // Remove the card with animation
+                const card = form.closest('.prompt-card');
+                card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    card.remove();
+                    
+                    // Check if no cards left
+                    const remainingCards = document.querySelectorAll('.prompt-card');
+                    if (remainingCards.length === 0) {
+                        this.showEmptyState();
+                    }
+                }, 300);
+            } else {
+                throw new Error('Failed to archive prompt');
+            }
+        })
+        .catch(error => {
+            console.error('Archive error:', error);
+            this.showToast('Failed to archive prompt. Please try again.', 'error');
+            
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+            button.setAttribute('title', 'Archive prompt');
+        });
+    }
+    
+    /**
+     * Show empty state when all prompts are archived
+     */
+    showEmptyState() {
+        const promptsList = document.getElementById('promptsList');
+        promptsList.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="bi bi-archive display-1 text-muted"></i>
+                    <h3 class="text-muted mt-3">All prompts archived</h3>
+                    <p class="text-muted">No active prompts found.</p>
+                    <a href="{{ url_for('prompt.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Prompt
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Initialize restore forms with enhanced UX
+     */
+    initRestoreForms() {
+        this.restoreForms.forEach(form => {
+            form.addEventListener('submit', (e) => this.handleRestoreSubmit(e));
+        });
+    }
+    
+    /**
+     * Handle restore form submission with confirmation and feedback
+     */
+    handleRestoreSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.currentTarget;
+        const button = form.querySelector('button[type="submit"]');
+        const originalText = button.innerHTML;
+        const promptTitle = form.closest('.prompt-card').querySelector('.card-title').textContent.trim();
+        
+        // Show confirmation dialog
+        if (!confirm(`Are you sure you want to restore "${promptTitle}"?`)) {
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        button.setAttribute('title', 'Restoring...');
+        
+        // Submit form
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new FormData(form)
+        })
+        .then(response => {
+            if (response.ok) {
+                // Show success feedback
+                this.showToast('Prompt restored successfully!', 'success');
+                
+                // Remove the card with animation
+                const card = form.closest('.prompt-card');
+                card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                
+                setTimeout(() => {
+                    card.remove();
+                    
+                    // Check if no cards left
+                    const remainingCards = document.querySelectorAll('.prompt-card');
+                    if (remainingCards.length === 0) {
+                        this.showEmptyState();
+                    }
+                }, 300);
+            } else {
+                throw new Error('Failed to restore prompt');
+            }
+        })
+        .catch(error => {
+            console.error('Restore error:', error);
+            this.showToast('Failed to restore prompt. Please try again.', 'error');
+            
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+            button.setAttribute('title', 'Restore prompt');
         });
     }
     
