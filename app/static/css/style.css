@@ -126,6 +126,35 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Prompt Actions Group - All 4 icons in one row */
+.prompt-actions-group {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.prompt-actions-group .btn {
+    border-radius: 0.375rem !important;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin: 0;
+    padding: 0.375rem;
+}
+
+.prompt-actions-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-actions-group .btn i {
+    font-size: 0.875rem;
+}
+
 /* Copy and Toggle Buttons */
 .copy-content-btn,
 .toggle-content-btn {
@@ -292,6 +321,20 @@ pre {
     
     .btn-group .btn {
         margin-right: 0;
+    }
+    
+    .prompt-actions-group {
+        gap: 0.125rem;
+    }
+    
+    .prompt-actions-group .btn {
+        min-width: 32px;
+        height: 32px;
+        padding: 0.25rem;
+    }
+    
+    .prompt-actions-group .btn i {
+        font-size: 0.75rem;
     }
     
     .content-text {
