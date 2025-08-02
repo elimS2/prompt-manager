@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.repositories import PromptRepository, TagRepository
 from app.models import Prompt, Tag
+from app.utils.tag_utils import parse_tag_string, validate_tag_name
 
 
 class PromptService:
@@ -124,6 +125,12 @@ class PromptService:
         
         if 'description' in data:
             data['description'] = data['description'].strip()
+        
+        # Handle boolean conversion for is_active
+        if 'is_active' in data:
+            is_active = data['is_active']
+            if isinstance(is_active, str):
+                data['is_active'] = is_active.lower() in ('true', '1', 'on', 'yes')
         
         # Handle tags separately
         tag_names = data.pop('tags', None)
@@ -323,8 +330,22 @@ class PromptService:
             if not tag_names:
                 return
             
+            # Validate and filter tag names
+            valid_tag_names = []
+            for tag_name in tag_names:
+                if validate_tag_name(tag_name):
+                    valid_tag_names.append(tag_name)
+                else:
+                    # Log invalid tag names for debugging
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Invalid tag name skipped: {tag_name}")
+            
+            if not valid_tag_names:
+                return
+            
             # Get or create tags
-            tags = self.tag_repo.bulk_get_or_create(tag_names)
+            tags = self.tag_repo.bulk_get_or_create(valid_tag_names)
             
             # Add tags to prompt
             for tag in tags:

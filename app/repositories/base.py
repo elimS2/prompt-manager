@@ -196,6 +196,9 @@ class BaseRepository(Generic[ModelType]):
         if instance:
             for key, value in data.items():
                 if hasattr(instance, key):
+                    # Handle boolean conversion for common boolean fields
+                    if key in ['is_active', 'is_deleted', 'is_archived'] and isinstance(value, str):
+                        value = value.lower() in ('true', '1', 'on', 'yes')
                     setattr(instance, key, value)
             self.session.commit()
         return instance

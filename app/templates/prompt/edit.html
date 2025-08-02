@@ -170,6 +170,33 @@
         if (!title || !content) {
             e.preventDefault();
             alert('Title and content are required');
+            return;
+        }
+        
+        // Validate title length
+        if (title.length > 255) {
+            e.preventDefault();
+            alert('Title must be less than 255 characters');
+            return;
+        }
+        
+        // Validate tags
+        const tagsInput = document.getElementById('tags');
+        const tagString = tagsInput.value.trim();
+        if (tagString) {
+            const tags = tagString.split(',').map(tag => tag.trim()).filter(tag => tag);
+            for (const tag of tags) {
+                if (tag.length > 50) {
+                    e.preventDefault();
+                    alert(`Tag "${tag}" is too long. Maximum 50 characters allowed.`);
+                    return;
+                }
+                if (!/^[a-zA-Z0-9\s-]+$/.test(tag)) {
+                    e.preventDefault();
+                    alert(`Tag "${tag}" contains invalid characters. Only letters, numbers, spaces, and hyphens are allowed.`);
+                    return;
+                }
+            }
         }
     });
     
@@ -192,6 +219,42 @@
     
     form.addEventListener('submit', () => {
         formChanged = false;
+    });
+    
+    // Tag input enhancement
+    const tagsInput = document.getElementById('tags');
+    tagsInput.addEventListener('input', function() {
+        // Auto-format tags: remove extra spaces and normalize
+        let value = this.value;
+        
+        // Remove multiple spaces
+        value = value.replace(/\s+/g, ' ');
+        
+        // Remove spaces around commas
+        value = value.replace(/\s*,\s*/g, ', ');
+        
+        // Remove leading/trailing spaces
+        value = value.trim();
+        
+        this.value = value;
+    });
+    
+    // Enhanced tag input handling
+    tagsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            // Add comma if not at the end
+            const cursorPos = this.selectionStart;
+            const value = this.value;
+            
+            if (cursorPos < value.length && value[cursorPos] !== ',') {
+                const before = value.substring(0, cursorPos);
+                const after = value.substring(cursorPos);
+                this.value = before + ', ' + after;
+                this.setSelectionRange(cursorPos + 2, cursorPos + 2);
+            }
+        }
     });
 </script>
 {% endblock %}

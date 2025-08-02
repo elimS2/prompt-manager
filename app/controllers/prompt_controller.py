@@ -5,6 +5,7 @@ Handles HTTP requests for the web interface.
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.services import PromptService, TagService, MergeService
 from app.controllers.base import BaseController
+from app.utils.tag_utils import parse_tag_string, format_tags_for_display
 import re
 
 
@@ -91,9 +92,9 @@ def create():
                 flash('Content is required', 'error')
                 return redirect(url_for('prompt.create'))
             
-            # Process tags
-            tag_names = request.form.get('tags', '').split(',')
-            tag_names = [tag.strip() for tag in tag_names if tag.strip()]
+            # Process tags using utility function
+            tag_string = request.form.get('tags', '')
+            tag_names = parse_tag_string(tag_string)
             data['tags'] = tag_names
             
             # Handle checkbox for is_active
@@ -146,24 +147,37 @@ def edit(id):
         return redirect(url_for('prompt.index'))
     
     if request.method == 'POST':
-        # Get update data
-        data = BaseController.get_request_data()
-        
-        # Process tags
-        if 'tags' in request.form:
-            tag_names = request.form.get('tags', '').split(',')
-            tag_names = [tag.strip() for tag in tag_names if tag.strip()]
-            data['tags'] = tag_names
-        
-        # Update prompt
-        prompt = prompt_service.update_prompt(id, data)
-        
-        flash('Prompt updated successfully!', 'success')
-        return redirect(url_for('prompt.view', id=prompt.id))
+        try:
+            # Get update data
+            data = BaseController.get_request_data()
+            
+            # Process tags using utility function
+            if 'tags' in request.form:
+                tag_string = request.form.get('tags', '')
+                tag_names = parse_tag_string(tag_string)
+                data['tags'] = tag_names
+            
+            # Handle checkbox for is_active
+            is_active = request.form.get('is_active')
+            if is_active == 'true':
+                data['is_active'] = True
+            else:
+                data['is_active'] = False
+            
+            # Update prompt
+            prompt = prompt_service.update_prompt(id, data)
+            
+            flash('Prompt updated successfully!', 'success')
+            return redirect(url_for('prompt.view', id=prompt.id))
+            
+        except Exception as e:
+            # Show user-friendly error
+            flash(f'Failed to update prompt: {str(e)}', 'error')
+            return redirect(url_for('prompt.edit', id=id))
     
     # GET request - show form
-    # Convert tags to comma-separated string for form
-    tag_names = ','.join(tag.name for tag in prompt.tags)
+    # Convert tags to comma-separated string for form using utility function
+    tag_names = format_tags_for_display([tag.name for tag in prompt.tags])
     
     return render_template('prompt/edit.html',
                          prompt=prompt,
