@@ -63,11 +63,11 @@
         <!-- Prompts List -->
         <div class="row" id="promptsList">
             {% for prompt in prompts %}
-                <div class="col-12 mb-4">
-                    <div class="card prompt-card h-100">
-                        <div class="card-body">
-                            <!-- Header with checkbox and title -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="col-12 mb-3">
+                    <div class="card prompt-card">
+                        <div class="card-body py-3">
+                            <!-- Header with checkbox, title and actions -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div class="form-check flex-grow-1">
                                     <input class="form-check-input prompt-checkbox" 
                                            type="checkbox" 
@@ -77,41 +77,6 @@
                                         <h5 class="card-title mb-0">{{ prompt.title }}</h5>
                                     </label>
                                 </div>
-                            </div>
-                            
-                            <!-- Description -->
-                            {% if prompt.description %}
-                                <p class="card-text text-muted small mb-3">{{ prompt.description }}</p>
-                            {% endif %}
-                            
-                            <!-- Tags -->
-                            <div class="mb-3">
-                                {% for tag in prompt.tags %}
-                                    <span class="tag" style="background-color: {{ tag.color }}">
-                                        {{ tag.name }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                            
-                            <!-- Content Preview (Collapsible) -->
-                            <div class="content-preview mb-3" style="display: none;">
-                                <div class="content-header d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0 text-muted">Content Preview</h6>
-                                    <small class="text-muted">{{ prompt.content|length }} characters</small>
-                                </div>
-                                <div class="content-body">
-                                    <pre class="content-text">{{ prompt.content }}</pre>
-                                </div>
-                            </div>
-                            
-                            <!-- Footer with metadata and actions -->
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    Created {{ prompt.created_at.strftime('%Y-%m-%d') }}
-                                    {% if prompt.updated_at != prompt.created_at %}
-                                        • Updated {{ prompt.updated_at.strftime('%Y-%m-%d') }}
-                                    {% endif %}
-                                </small>
                                 <div class="prompt-actions-group" role="group">
                                     <button class="btn btn-sm btn-outline-primary copy-content-btn" 
                                             data-content="{{ prompt.content|e }}"
@@ -138,6 +103,40 @@
                                     </a>
                                 </div>
                             </div>
+                            
+                            <!-- Description -->
+                            {% if prompt.description %}
+                                <p class="card-text text-muted small mb-2">{{ prompt.description }}</p>
+                            {% endif %}
+                            
+                            <!-- Tags -->
+                            <div class="mb-2">
+                                {% for tag in prompt.tags %}
+                                    <span class="tag" style="background-color: {{ tag.color }}">
+                                        {{ tag.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Content Preview (Collapsible) -->
+                            <div class="content-preview mb-3" style="display: none;">
+                                <div class="content-header d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-muted">Content Preview</h6>
+                                    <small class="text-muted">{{ prompt.content|length }} characters</small>
+                                </div>
+                                <div class="content-body">
+                                    <pre class="content-text">{{ prompt.content }}</pre>
+                                </div>
+                            </div>
+                            
+                            <!-- Footer with metadata -->
+                            {% if prompt.updated_at != prompt.created_at %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        Updated {{ prompt.updated_at.strftime('%Y-%m-%d') }}
+                                    </small>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -462,3 +462,13 @@ pre {
         border: 1px solid #ccc;
     }
 }
+
+/* Compact Card Styles */
+.py-3 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0rem !important;
+}
+
+.form-check.flex-grow-1 {
+    margin: auto;
+}
