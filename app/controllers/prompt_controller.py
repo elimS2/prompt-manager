@@ -45,19 +45,59 @@ def index():
 def create():
     """Create a new prompt."""
     if request.method == 'POST':
-        # Validate required fields
-        data = BaseController.get_request_data()
-        
-        # Process tags
-        tag_names = request.form.get('tags', '').split(',')
-        tag_names = [tag.strip() for tag in tag_names if tag.strip()]
-        data['tags'] = tag_names
-        
-        # Create prompt
-        prompt = prompt_service.create_prompt(data)
-        
-        flash('Prompt created successfully!', 'success')
-        return redirect(url_for('prompt.view', id=prompt.id))
+        try:
+            # Validate required fields
+            data = BaseController.get_request_data()
+            
+            # Log received data for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Received form data: {data}")
+            
+            # Basic validation
+            title = data.get('title', '').strip()
+            content = data.get('content', '').strip()
+            
+            if not title:
+                flash('Title is required', 'error')
+                return redirect(url_for('prompt.create'))
+            
+            if not content:
+                flash('Content is required', 'error')
+                return redirect(url_for('prompt.create'))
+            
+            # Process tags
+            tag_names = request.form.get('tags', '').split(',')
+            tag_names = [tag.strip() for tag in tag_names if tag.strip()]
+            data['tags'] = tag_names
+            
+            # Handle checkbox for is_active
+            is_active = request.form.get('is_active')
+            if is_active == 'true':
+                data['is_active'] = True
+            else:
+                data['is_active'] = False
+            
+            # Create prompt
+            prompt = prompt_service.create_prompt(data)
+            
+            logger.debug(f"Prompt created with ID: {prompt.id}")
+            
+            flash('Prompt created successfully!', 'success')
+            redirect_url = url_for('prompt.view', id=prompt.id)
+            logger.debug(f"Redirecting to: {redirect_url}")
+            
+            return redirect(redirect_url)
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating prompt: {str(e)}", exc_info=True)
+            
+            # Show user-friendly error
+            flash(f'Failed to create prompt: {str(e)}', 'error')
+            return redirect(url_for('prompt.create'))
     
     # GET request - show form
     return render_template('prompt/create.html')

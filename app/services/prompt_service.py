@@ -41,35 +41,47 @@ class PromptService:
         Raises:
             ValueError: If validation fails
         """
-        # Extract and validate required fields
-        title = data.get('title', '').strip()
-        content = data.get('content', '').strip()
-        
-        if not title:
-            raise ValueError("Title is required")
-        if not content:
-            raise ValueError("Content is required")
-        if len(title) > 255:
-            raise ValueError("Title must be less than 255 characters")
-        
-        # Extract optional fields
-        description = data.get('description', '').strip()
-        is_active = data.get('is_active', True)
-        tag_names = data.get('tags', [])
-        
-        # Create prompt
-        prompt = self.prompt_repo.create(
-            title=title,
-            content=content,
-            description=description,
-            is_active=is_active
-        )
-        
-        # Process tags if provided
-        if tag_names:
-            self._add_tags_to_prompt(prompt, tag_names)
-        
-        return prompt
+        try:
+            # Extract and validate required fields
+            title = data.get('title', '').strip()
+            content = data.get('content', '').strip()
+            
+            if not title:
+                raise ValueError("Title is required")
+            if not content:
+                raise ValueError("Content is required")
+            if len(title) > 255:
+                raise ValueError("Title must be less than 255 characters")
+            
+            # Extract optional fields
+            description = data.get('description', '').strip()
+            is_active = data.get('is_active', True)
+            tag_names = data.get('tags', [])
+            
+            # Handle checkbox value for is_active
+            if isinstance(is_active, str):
+                is_active = is_active.lower() in ('true', '1', 'on', 'yes')
+            
+            # Create prompt
+            prompt = self.prompt_repo.create(
+                title=title,
+                content=content,
+                description=description,
+                is_active=is_active
+            )
+            
+            # Process tags if provided
+            if tag_names:
+                self._add_tags_to_prompt(prompt, tag_names)
+            
+            return prompt
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in create_prompt: {str(e)}", exc_info=True)
+            raise
     
     def update_prompt(self, id: int, data: Dict[str, Any]) -> Prompt:
         """
@@ -293,18 +305,27 @@ class PromptService:
             prompt: Prompt instance
             tag_names: List of tag names
         """
-        if not tag_names:
-            return
-        
-        # Get or create tags
-        tags = self.tag_repo.bulk_get_or_create(tag_names)
-        
-        # Add tags to prompt
-        for tag in tags:
-            if tag not in prompt.tags:
-                prompt.tags.append(tag)
-        
-        self.prompt_repo.commit()
+        try:
+            if not tag_names:
+                return
+            
+            # Get or create tags
+            tags = self.tag_repo.bulk_get_or_create(tag_names)
+            
+            # Add tags to prompt
+            for tag in tags:
+                if tag not in prompt.tags:
+                    prompt.tags.append(tag)
+            
+            self.prompt_repo.commit()
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding tags to prompt: {str(e)}", exc_info=True)
+            # Don't fail the entire prompt creation if tag addition fails
+            pass
     
     def _update_prompt_tags(self, prompt: Prompt, tag_names: List[str]) -> None:
         """

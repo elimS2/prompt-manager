@@ -63,12 +63,27 @@ class BaseController:
                     flash(str(e), 'error')
                     return redirect(request.referrer or '/')
             except Exception as e:
-                # Log the error in production
-                if request.is_json:
-                    return jsonify({'error': 'An unexpected error occurred'}), 500
+                # Log the error for debugging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Service error in {f.__name__}: {str(e)}", exc_info=True)
+                
+                # In development, show detailed error
+                from flask import current_app
+                if current_app.config.get('DEBUG', False):
+                    error_msg = f"Error: {str(e)}"
+                    if request.is_json:
+                        return jsonify({'error': error_msg}), 500
+                    else:
+                        flash(error_msg, 'error')
+                        return redirect(request.referrer or '/')
                 else:
-                    flash('An unexpected error occurred', 'error')
-                    return redirect(request.referrer or '/')
+                    # In production, show generic error
+                    if request.is_json:
+                        return jsonify({'error': 'An unexpected error occurred'}), 500
+                    else:
+                        flash('An unexpected error occurred', 'error')
+                        return redirect(request.referrer or '/')
         
         return decorated_function
     

@@ -71,6 +71,8 @@
                         <label class="form-check-label" for="is_active">
                             Active (visible in lists and searches)
                         </label>
+                        <!-- Hidden input to ensure value is always sent -->
+                        <input type="hidden" name="is_active_fallback" value="false">
                     </div>
                     
                     <!-- Action Buttons -->
@@ -160,9 +162,31 @@
         const title = document.getElementById('title').value.trim();
         const content = document.getElementById('content').value.trim();
         
-        if (!title || !content) {
+        if (!title) {
             e.preventDefault();
-            alert('Title and content are required');
+            alert('Title is required');
+            document.getElementById('title').focus();
+            return;
+        }
+        
+        if (!content) {
+            e.preventDefault();
+            alert('Content is required');
+            document.getElementById('content').focus();
+            return;
+        }
+        
+        // Ensure checkbox value is properly set
+        const isActiveCheckbox = document.getElementById('is_active');
+        if (isActiveCheckbox.checked) {
+            isActiveCheckbox.value = 'true';
+        } else {
+            // Create a hidden input for unchecked state
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'is_active';
+            hiddenInput.value = 'false';
+            form.appendChild(hiddenInput);
         }
     });
 </script>
