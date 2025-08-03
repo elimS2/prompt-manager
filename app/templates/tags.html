@@ -6,17 +6,17 @@
 <div class="row">
     <!-- Tag Cloud -->
     <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="mb-0">Tag Cloud</h3>
+        <div class="card mb-4 theme-surface theme-border">
+            <div class="card-header d-flex justify-content-between align-items-center theme-border border-bottom">
+                <h3 class="mb-0 theme-text">Tag Cloud</h3>
                 <form method="POST" action="{{ url_for('prompt.cleanup_tags') }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                    <button type="submit" class="btn btn-sm btn-outline-danger theme-transition" 
                             onclick="return confirm('This will remove all unused tags. Continue?')">
                         <i class="bi bi-trash"></i> Cleanup Unused
                     </button>
                 </form>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <div class="tag-cloud text-center">
                     {% for tag_data in tag_cloud %}
                         <a href="{{ url_for('prompt.index', tags=tag_data.name) }}" 
@@ -28,23 +28,23 @@
                             {{ tag_data.name }}
                         </a>
                     {% else %}
-                        <p class="text-muted">No tags found. Create some prompts with tags to see them here.</p>
+                        <p class="theme-text-secondary">No tags found. Create some prompts with tags to see them here.</p>
                     {% endfor %}
                 </div>
             </div>
         </div>
         
         <!-- Popular Tags List -->
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">Most Popular Tags</h4>
+        <div class="card theme-surface theme-border">
+            <div class="card-header theme-border border-bottom">
+                <h4 class="mb-0 theme-text">Most Popular Tags</h4>
             </div>
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush theme-text">
                 {% for tag_data in statistics.popular_tags %}
                     <a href="{{ url_for('prompt.index', tags=tag_data.name) }}" 
                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <span>
-                            <span class="badge me-2" style="background-color: #3B82F6">
+                            <span class="badge me-2" style="background-color: var(--primary-color)">
                                 {{ tag_data.name }}
                             </span>
                         </span>
@@ -53,7 +53,7 @@
                         </span>
                     </a>
                 {% else %}
-                    <div class="list-group-item text-muted">
+                    <div class="list-group-item theme-text-secondary">
                         No tags yet
                     </div>
                 {% endfor %}
@@ -63,26 +63,26 @@
     
     <!-- Statistics Sidebar -->
     <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4 class="mb-0">Tag Statistics</h4>
+        <div class="card mb-4 theme-surface theme-border">
+            <div class="card-header theme-border border-bottom">
+                <h4 class="mb-0 theme-text">Tag Statistics</h4>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <div class="stat-item mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Total Tags</span>
-                        <span class="fs-4 fw-bold">{{ statistics.total_tags }}</span>
+                        <span class="theme-text-secondary">Total Tags</span>
+                        <span class="fs-4 fw-bold theme-text">{{ statistics.total_tags }}</span>
                     </div>
                 </div>
                 <div class="stat-item mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Used Tags</span>
+                        <span class="theme-text-secondary">Used Tags</span>
                         <span class="fs-4 fw-bold text-success">{{ statistics.used_tags }}</span>
                     </div>
                 </div>
                 <div class="stat-item mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Unused Tags</span>
+                        <span class="theme-text-secondary">Unused Tags</span>
                         <span class="fs-4 fw-bold text-warning">{{ statistics.unused_tags }}</span>
                     </div>
                 </div>

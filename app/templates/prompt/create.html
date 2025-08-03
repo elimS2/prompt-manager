@@ -5,44 +5,44 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="mb-0">Create New Prompt</h3>
+        <div class="card theme-surface theme-border">
+            <div class="card-header theme-border border-bottom">
+                <h3 class="mb-0 theme-text">Create New Prompt</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <form method="POST" action="{{ url_for('prompt.create') }}" id="createForm">
                     <!-- Title Field -->
                     <div class="mb-3">
-                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                        <label for="title" class="form-label theme-text">Title <span class="text-danger">*</span></label>
                         <input type="text" 
-                               class="form-control" 
+                               class="form-control theme-transition" 
                                id="title" 
                                name="title" 
                                required 
                                maxlength="255"
                                placeholder="Enter a descriptive title for your prompt"
                                autofocus>
-                        <div class="form-text">Maximum 255 characters</div>
+                        <div class="form-text theme-text-secondary">Maximum 255 characters</div>
                     </div>
                     
                     <!-- Content Field -->
                     <div class="mb-3">
-                        <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
-                        <textarea class="form-control" 
+                        <label for="content" class="form-label theme-text">Content <span class="text-danger">*</span></label>
+                        <textarea class="form-control theme-transition" 
                                   id="content" 
                                   name="content" 
                                   rows="8" 
                                   required
                                   placeholder="Enter your prompt content here..."></textarea>
-                        <div class="form-text">
+                        <div class="form-text theme-text-secondary">
                             <span id="charCount">0</span> characters
                         </div>
                     </div>
                     
                     <!-- Description Field -->
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" 
+                        <label for="description" class="form-label theme-text">Description</label>
+                        <textarea class="form-control theme-transition" 
                                   id="description" 
                                   name="description" 
                                   rows="3"
@@ -51,24 +51,24 @@
                     
                     <!-- Tags Field -->
                     <div class="mb-4">
-                        <label for="tags" class="form-label">Tags</label>
+                        <label for="tags" class="form-label theme-text">Tags</label>
                         <input type="text" 
-                               class="form-control" 
+                               class="form-control theme-transition" 
                                id="tags" 
                                name="tags"
                                placeholder="Enter tags separated by commas (e.g., python, code-review, documentation)">
-                        <div class="form-text">Tags help organize and find prompts later</div>
+                        <div class="form-text theme-text-secondary">Tags help organize and find prompts later</div>
                     </div>
                     
                     <!-- Active Status -->
                     <div class="form-check mb-4">
-                        <input class="form-check-input" 
+                        <input class="form-check-input theme-transition" 
                                type="checkbox" 
                                id="is_active" 
                                name="is_active" 
                                value="true" 
                                checked>
-                        <label class="form-check-label" for="is_active">
+                        <label class="form-check-label theme-text" for="is_active">
                             Active (visible in lists and searches)
                         </label>
                         <!-- Hidden input to ensure value is always sent -->
@@ -77,14 +77,14 @@
                     
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary theme-transition">
                             <i class="bi bi-arrow-left"></i> Cancel
                         </a>
                         <div>
-                            <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                            <button type="button" class="btn btn-outline-primary theme-transition" id="previewBtn">
                                 <i class="bi bi-eye"></i> Preview
                             </button>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary theme-transition">
                                 <i class="bi bi-save"></i> Create Prompt
                             </button>
                         </div>

@@ -5,27 +5,27 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h3 class="mb-0"><i class="bi bi-check-circle"></i> Merge Successful</h3>
+        <div class="card theme-surface theme-border">
+            <div class="card-header bg-success text-white theme-border border-bottom">
+                <h3 class="mb-0 theme-text"><i class="bi bi-check-circle"></i> Merge Successful</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <!-- Merge Metadata -->
-                <div class="alert alert-info">
+                <div class="alert alert-info theme-transition">
                     <div class="row">
                         <div class="col-md-4">
-                            <strong>Strategy:</strong> {{ metadata.strategy|title }}
+                            <strong class="theme-text">Strategy:</strong> {{ metadata.strategy|title }}
                         </div>
                         <div class="col-md-4">
-                            <strong>Prompts Merged:</strong> {{ metadata.prompt_count }}
+                            <strong class="theme-text">Prompts Merged:</strong> {{ metadata.prompt_count }}
                         </div>
                         <div class="col-md-4">
-                            <strong>Merged At:</strong> {{ metadata.merged_at[:10] }}
+                            <strong class="theme-text">Merged At:</strong> {{ metadata.merged_at[:10] }}
                         </div>
                     </div>
                     <div class="mt-2">
-                        <strong>Source Prompts:</strong>
-                        <ul class="mb-0">
+                        <strong class="theme-text">Source Prompts:</strong>
+                        <ul class="mb-0 theme-text">
                             {% for title in metadata.prompt_titles %}
                                 <li>{{ title }}</li>
                             {% endfor %}
@@ -36,39 +36,39 @@
                 <!-- Merged Content -->
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5>Merged Content</h5>
+                        <h5 class="theme-text">Merged Content</h5>
                         <div>
-                            <span class="text-muted me-3">
+                            <span class="theme-text-secondary me-3">
                                 <i class="bi bi-file-text"></i> {{ merged_content|length }} characters
                             </span>
-                            <button class="btn btn-success" onclick="copyMergedContent()">
+                            <button class="btn btn-success theme-transition" onclick="copyMergedContent()">
                                 <i class="bi bi-clipboard"></i> Copy to Clipboard
                             </button>
                         </div>
                     </div>
-                    <div class="border rounded p-3 bg-light" style="max-height: 500px; overflow-y: auto;">
-                        <pre id="mergedContent" style="white-space: pre-wrap; margin-bottom: 0;">{{ merged_content }}</pre>
+                    <div class="border rounded p-3 theme-surface theme-border" style="max-height: 500px; overflow-y: auto;">
+                        <pre id="mergedContent" class="theme-text" style="white-space: pre-wrap; margin-bottom: 0;">{{ merged_content }}</pre>
                     </div>
                 </div>
                 
                 <!-- Actions -->
                 <div class="row">
                     <div class="col-md-12">
-                        <h5>What would you like to do next?</h5>
+                        <h5 class="theme-text">What would you like to do next?</h5>
                         <div class="d-flex gap-2 flex-wrap">
-                            <button class="btn btn-primary" onclick="createPromptFromMerge()">
+                            <button class="btn btn-primary theme-transition" onclick="createPromptFromMerge()">
                                 <i class="bi bi-plus-circle"></i> Save as New Prompt
                             </button>
-                            <button class="btn btn-outline-primary" onclick="editMergedContent()">
+                            <button class="btn btn-outline-primary theme-transition" onclick="editMergedContent()">
                                 <i class="bi bi-pencil"></i> Edit Content
                             </button>
-                            <button class="btn btn-success" onclick="sendToCursor()" id="cursorBtn">
+                            <button class="btn btn-success theme-transition" onclick="sendToCursor()" id="cursorBtn">
                                 <i class="bi bi-cursor"></i> Send to Cursor IDE
                             </button>
-                            <a href="{{ url_for('prompt.merge') }}" class="btn btn-outline-secondary">
+                            <a href="{{ url_for('prompt.merge') }}" class="btn btn-outline-secondary theme-transition">
                                 <i class="bi bi-arrows-collapse"></i> Merge More Prompts
                             </a>
-                            <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary theme-transition">
                                 <i class="bi bi-house"></i> Back to Prompts
                             </a>
                         </div>

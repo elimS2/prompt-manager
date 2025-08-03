@@ -5,20 +5,20 @@
 {% block content %}
 <div class="row">
     <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">{{ prompt.title }}</h2>
+        <div class="card mb-4 theme-surface theme-border">
+            <div class="card-header d-flex justify-content-between align-items-center theme-border border-bottom">
+                <h2 class="mb-0 theme-text">{{ prompt.title }}</h2>
                 <div>
                     {% if not prompt.is_active %}
                         <span class="badge bg-warning">Inactive</span>
                     {% endif %}
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <!-- Description -->
                 {% if prompt.description %}
-                    <p class="text-muted">{{ prompt.description }}</p>
-                    <hr>
+                    <p class="theme-text-secondary">{{ prompt.description }}</p>
+                    <hr class="theme-border">
                 {% endif %}
                 
                 <!-- Tags -->
@@ -33,50 +33,50 @@
                 <!-- Content -->
                 <div class="content-section">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5>Content</h5>
-                        <button class="btn btn-sm btn-outline-secondary" 
+                        <h5 class="theme-text">Content</h5>
+                        <button class="btn btn-sm btn-outline-secondary theme-transition" 
                                 onclick="copyToClipboard('{{ prompt.content | replace('\n', '\\n') | replace('\r', '') | replace('\'', '\\\'') }}')">
                             <i class="bi bi-clipboard"></i> Copy
                         </button>
                     </div>
-                    <pre class="bg-light p-3 rounded">{{ prompt.content }}</pre>
+                    <pre class="theme-surface theme-border p-3 rounded theme-text">{{ prompt.content }}</pre>
                 </div>
                 
                 <!-- Metadata -->
-                <div class="mt-4 text-muted small">
+                <div class="mt-4 theme-text-secondary small">
                     <p class="mb-1">Created: {{ prompt.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                     <p class="mb-0">Updated: {{ prompt.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                 </div>
             </div>
-            <div class="card-footer">
+            <div class="card-footer theme-border border-top">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-secondary theme-transition">
                             <i class="bi bi-arrow-left"></i> Back to List
                         </a>
                     </div>
                     <div>
-                        <button type="button" class="btn btn-success" onclick="sendToCursor({{ prompt.id }})">
+                        <button type="button" class="btn btn-success theme-transition" onclick="sendToCursor({{ prompt.id }})">
                             <i class="bi bi-cursor"></i> Send to Cursor
                         </button>
                         <form action="{{ url_for('prompt.duplicate', id=prompt.id) }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-outline-primary">
+                            <button type="submit" class="btn btn-outline-primary theme-transition">
                                 <i class="bi bi-files"></i> Duplicate
                             </button>
                         </form>
-                        <a href="{{ url_for('prompt.edit', id=prompt.id) }}" class="btn btn-primary">
+                        <a href="{{ url_for('prompt.edit', id=prompt.id) }}" class="btn btn-primary theme-transition">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
                         {% if prompt.is_active %}
                             <button type="button" 
-                                    class="btn btn-danger" 
+                                    class="btn btn-danger theme-transition" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#deleteModal">
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                         {% else %}
                             <form action="{{ url_for('prompt.restore', id=prompt.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-success">
+                                <button type="submit" class="btn btn-success theme-transition">
                                     <i class="bi bi-arrow-clockwise"></i> Restore
                                 </button>
                             </form>
@@ -91,12 +91,12 @@
     <div class="col-md-4">
         <!-- Suggested Tags -->
         {% if suggested_tags %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Suggested Tags</h5>
+            <div class="card mb-4 theme-surface theme-border">
+                <div class="card-header theme-border border-bottom">
+                    <h5 class="mb-0 theme-text">Suggested Tags</h5>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted small">Based on content analysis:</p>
+                <div class="card-body theme-text">
+                    <p class="theme-text-secondary small">Based on content analysis:</p>
                     {% for tag in suggested_tags %}
                         <span class="tag mb-1" style="background-color: {{ tag.color }}">
                             {{ tag.name }}

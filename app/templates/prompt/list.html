@@ -6,42 +6,42 @@
 <div class="row">
     <div class="col-md-3">
         <!-- Filters Sidebar -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Filters</h5>
+        <div class="card mb-4 theme-surface theme-border">
+            <div class="card-header theme-border border-bottom">
+                <h5 class="mb-0 theme-text">Filters</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <!-- Search Filter -->
                 <form method="GET" action="{{ url_for('prompt.index') }}" id="filterForm">
                     <div class="mb-3">
-                        <label for="search" class="form-label">Search</label>
-                        <input type="text" class="form-control form-control-sm" id="search" name="search" 
+                        <label for="search" class="form-label theme-text">Search</label>
+                        <input type="text" class="form-control form-control-sm theme-transition" id="search" name="search" 
                                value="{{ filters.get('search', '') }}" placeholder="Search prompts...">
                     </div>
                     
                     <!-- Active Status Filter -->
                     <div class="mb-3">
-                        <label class="form-label">Status</label>
+                        <label class="form-label theme-text">Status</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="is_active" value="all" 
+                            <input class="form-check-input theme-transition" type="radio" name="is_active" value="all" 
                                    {% if filters.get('is_active') == None %}checked{% endif %}>
-                            <label class="form-check-label">All</label>
+                            <label class="form-check-label theme-text">All</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="is_active" value="true"
+                            <input class="form-check-input theme-transition" type="radio" name="is_active" value="true"
                                    {% if filters.get('is_active') == True %}checked{% endif %}>
-                            <label class="form-check-label">Active</label>
+                            <label class="form-check-label theme-text">Active</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="is_active" value="false"
+                            <input class="form-check-input theme-transition" type="radio" name="is_active" value="false"
                                    {% if filters.get('is_active') == False %}checked{% endif %}>
-                            <label class="form-check-label">Inactive</label>
+                            <label class="form-check-label theme-text">Inactive</label>
                         </div>
                     </div>
                     
                     <!-- Apply Filters Button -->
                     <div class="mb-3">
-                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <button type="submit" class="btn btn-primary btn-sm w-100 theme-transition">
                             <i class="bi bi-funnel me-1"></i>Apply Filters
                         </button>
                     </div>
@@ -49,10 +49,10 @@
                 
                 <!-- Popular Tags -->
                 <div class="mb-3">
-                    <label class="form-label">Popular Tags</label>
+                    <label class="form-label theme-text">Popular Tags</label>
                     {% for item in popular_tags %}
                         <a href="#" 
-                           class="tag tag-filter" 
+                           class="tag tag-filter theme-transition" 
                            data-tag="{{ item.tag.name }}"
                            style="background-color: {{ item.tag.color }}">
                             {{ item.tag.name }} ({{ item.usage_count }})
@@ -63,7 +63,7 @@
                 <!-- Clear Filters Button -->
                 {% if filters.tags or filters.search or filters.is_active is not none or filters.is_active == None %}
                     <div class="mb-3">
-                        <a href="{{ url_for('prompt.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-outline-secondary btn-sm w-100 theme-transition">
                             <i class="bi bi-x-circle me-1"></i>Clear All Filters
                         </a>
                     </div>
@@ -75,15 +75,15 @@
     <div class="col-md-9">
         <!-- Actions Bar -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Prompts</h1>
+            <h1 class="theme-text">Prompts</h1>
             <div>
-                <button class="btn btn-outline-info me-2" id="toggleCombinedPanelBtn" data-bs-toggle="tooltip" title="Toggle Combined Content Panel">
+                <button class="btn btn-outline-info me-2 theme-transition" id="toggleCombinedPanelBtn" data-bs-toggle="tooltip" title="Toggle Combined Content Panel">
                     <i class="bi bi-layout-text-window me-1"></i>Toggle Panel
                 </button>
-                <button class="btn btn-secondary" id="mergeBtn" disabled>
+                <button class="btn btn-secondary theme-transition" id="mergeBtn" disabled>
                     Merge Selected
                 </button>
-                <a href="{{ url_for('prompt.create') }}" class="btn btn-primary">
+                <a href="{{ url_for('prompt.create') }}" class="btn btn-primary theme-transition">
                     Create New Prompt
                 </a>
             </div>
@@ -91,11 +91,11 @@
         
         <!-- Active Filters Display -->
         {% if filters.tags or filters.search or filters.is_active is not none or filters.is_active == None %}
-            <div class="card mb-3">
-                <div class="card-body py-2">
+            <div class="card mb-3 theme-surface theme-border">
+                <div class="card-body py-2 theme-text">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <small class="text-muted me-2">Active filters:</small>
+                            <small class="theme-text-secondary me-2">Active filters:</small>
                             {% if filters.tags %}
                                 {% for tag in filters.tags %}
                                     <span class="badge bg-primary me-1">
@@ -137,7 +137,7 @@
                                 </span>
                             {% endif %}
                         </div>
-                        <a href="{{ url_for('prompt.index') }}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{{ url_for('prompt.index') }}" class="btn btn-sm btn-outline-secondary theme-transition">
                             <i class="bi bi-x-circle me-1"></i>Clear All Filters
                         </a>
                     </div>
@@ -146,38 +146,38 @@
         {% endif %}
         
         <!-- Combined Content Panel -->
-        <div id="combinedContentPanel" class="card mb-4" style="display: none;">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
+        <div id="combinedContentPanel" class="card mb-4 theme-surface theme-border" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center theme-border border-bottom">
+                <h5 class="mb-0 theme-text">
                     <i class="bi bi-clipboard-plus me-2"></i>
                     Combined Content
                     <span id="selectedCount" class="badge bg-primary ms-2">0</span>
                 </h5>
                 <div class="btn-group">
-                    <button id="copyCombinedBtn" class="btn btn-sm btn-primary" disabled>
+                    <button id="copyCombinedBtn" class="btn btn-sm btn-primary theme-transition" disabled>
                         <i class="bi bi-clipboard me-1"></i>Copy
                     </button>
-                    <button id="clearCombinedBtn" class="btn btn-sm btn-outline-secondary">
+                    <button id="clearCombinedBtn" class="btn btn-sm btn-outline-secondary theme-transition">
                         <i class="bi bi-x-circle me-1"></i>Clear
                     </button>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body theme-text">
                 <div class="mb-3">
-                    <label for="combinedContentTextarea" class="form-label">Edit combined content:</label>
+                    <label for="combinedContentTextarea" class="form-label theme-text">Edit combined content:</label>
                     <textarea 
                         id="combinedContentTextarea" 
-                        class="form-control" 
+                        class="form-control theme-transition" 
                         rows="8" 
                         placeholder="Selected prompts content will appear here..."
                         style="font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; font-size: 0.875rem; resize: vertical;"
                     ></textarea>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
+                    <small class="theme-text-secondary">
                         <span id="charCount">0</span> characters
                     </small>
-                    <small class="text-muted">
+                    <small class="theme-text-secondary">
                         <span id="wordCount">0</span> words
                     </small>
                 </div>
@@ -189,8 +189,8 @@
             {% if prompts %}
                 {% for prompt in prompts %}
                     <div class="col-12 mb-3" data-id="{{ prompt.id }}">
-                        <div class="card prompt-card {% if not prompt.is_active %}inactive-prompt{% endif %}">
-                        <div class="card-body py-3">
+                        <div class="card prompt-card theme-surface theme-border {% if not prompt.is_active %}inactive-prompt{% endif %}">
+                        <div class="card-body py-3 theme-text">
                             <!-- Header with checkbox, title and actions -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <!-- Drag handle -->
@@ -389,8 +389,8 @@
 <style>
     /* Search highlight styling */
     .search-highlight {
-        background-color: #ffeb3b;
-        color: #000;
+        background-color: var(--warning-color);
+        color: var(--text-inverse);
         padding: 0 2px;
         border-radius: 2px;
         font-weight: 600;
