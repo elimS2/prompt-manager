@@ -53,8 +53,18 @@ def index():
     # Get prompts
     result = prompt_service.get_prompts_by_filters(filters)
     
-    # Get popular tags for sidebar
-    popular_tags = tag_service.get_popular_tags(limit=10)
+    # Get current status filter and convert to boolean
+    is_active_filter = filters.get('is_active')
+    if isinstance(is_active_filter, str):
+        if is_active_filter == 'true':
+            is_active_filter = True
+        elif is_active_filter == 'false':
+            is_active_filter = False
+        else:
+            is_active_filter = None
+    
+    # Get popular tags for current status
+    popular_tags = tag_service.get_popular_tags(limit=10, is_active=is_active_filter)
     
     # Handle result format (list or dict with pagination)
     if isinstance(result, dict):
@@ -367,6 +377,40 @@ def tags():
     return render_template('tags.html',
                          tag_cloud=tag_cloud,
                          statistics=statistics)
+
+
+@prompt_bp.route('/api/tags/popular')
+def get_popular_tags_api():
+    """Get popular tags filtered by status for AJAX requests."""
+    is_active = request.args.get('is_active')
+    
+    # Convert string to boolean
+    if is_active == 'true':
+        is_active = True
+    elif is_active == 'false':
+        is_active = False
+    else:
+        is_active = None
+    
+    try:
+        popular_tags = tag_service.get_popular_tags(limit=10, is_active=is_active)
+        return jsonify({
+            'success': True,
+            'tags': [
+                {
+                    'id': item['tag'].id,
+                    'name': item['tag'].name,
+                    'color': item['tag'].color,
+                    'usage_count': item['usage_count']
+                }
+                for item in popular_tags
+            ]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @prompt_bp.route('/tags/cleanup', methods=['POST'])

@@ -50,14 +50,16 @@
                 <!-- Popular Tags -->
                 <div class="mb-3">
                     <label class="form-label theme-text">Popular Tags</label>
-                    {% for item in popular_tags %}
-                        <a href="#" 
-                           class="tag tag-filter theme-transition" 
-                           data-tag="{{ item.tag.name }}"
-                           style="background-color: {{ item.tag.color }}">
-                            {{ item.tag.name }} ({{ item.usage_count }})
-                        </a>
-                    {% endfor %}
+                    <div class="popular-tags-container">
+                        {% for item in popular_tags %}
+                            <a href="#" 
+                               class="tag tag-filter theme-transition" 
+                               data-tag="{{ item.tag.name }}"
+                               style="background-color: {{ item.tag.color }}">
+                                {{ item.tag.name }} ({{ item.usage_count }})
+                            </a>
+                        {% endfor %}
+                    </div>
                 </div>
                 
                 <!-- Clear Filters Button -->

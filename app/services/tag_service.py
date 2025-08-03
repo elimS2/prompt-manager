@@ -180,17 +180,18 @@ class TagService:
         
         return target_tag
     
-    def get_popular_tags(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_popular_tags(self, limit: int = 10, is_active: Optional[bool] = None) -> List[Dict[str, Any]]:
         """
-        Get most popular tags with usage statistics.
+        Get most popular tags with usage statistics, optionally filtered by prompt status.
         
         Args:
             limit: Maximum number of tags to return
+            is_active: Filter by prompt status (True=Active, False=Inactive, None=All)
             
         Returns:
             List of dictionaries with tag info and usage count
         """
-        return self.tag_repo.get_popular_tags(limit)
+        return self.tag_repo.get_popular_tags(limit, is_active)
     
     def get_tag_cloud(self, limit: int = 20) -> List[Dict[str, Any]]:
         """
@@ -202,7 +203,7 @@ class TagService:
         Returns:
             List of tags with normalized weights for visualization
         """
-        popular_tags = self.tag_repo.get_popular_tags(limit)
+        popular_tags = self.tag_repo.get_popular_tags(limit, is_active=None)
         
         if not popular_tags:
             return []

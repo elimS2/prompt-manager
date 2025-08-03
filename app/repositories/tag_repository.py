@@ -44,23 +44,38 @@ class TagRepository(BaseRepository[Tag]):
             tag = self.create(name=normalized_name, color=color or '#3B82F6')
         return tag
     
-    def get_popular_tags(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_popular_tags(self, limit: int = 10, is_active: Optional[bool] = None) -> List[Dict[str, Any]]:
         """
-        Get most popular tags by usage count.
+        Get most popular tags by usage count, optionally filtered by prompt status.
         
         Args:
             limit: Maximum number of tags to return
+            is_active: Filter by prompt status (True=Active, False=Inactive, None=All)
             
         Returns:
             List of dictionaries with tag info and usage count
         """
-        # Query to get tags with their usage count
-        results = (
+        # Base query to get tags with their usage count
+        query = (
             self.session.query(
                 Tag,
                 func.count(prompt_tags.c.prompt_id).label('usage_count')
             )
             .outerjoin(prompt_tags, Tag.id == prompt_tags.c.tag_id)
+        )
+        
+        # Apply status filter if specified
+        if is_active is not None:
+            from app.models import Prompt
+            query = (
+                query
+                .join(Prompt, prompt_tags.c.prompt_id == Prompt.id)
+                .filter(Prompt.is_active == is_active)
+            )
+        
+        # Complete the query with grouping, ordering, and limit
+        results = (
+            query
             .group_by(Tag.id)
             .order_by(func.count(prompt_tags.c.prompt_id).desc())
             .limit(limit)

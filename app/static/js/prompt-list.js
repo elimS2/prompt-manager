@@ -31,6 +31,10 @@ class PromptListManager {
         this.isPanelVisible = false;
         this.panelVisibilityPreference = localStorage.getItem('combinedPanelVisible') === 'true';
         
+        // Tag filtering functionality
+        this.tagFiltersContainer = document.querySelector('.popular-tags-container');
+        this.currentStatusFilter = this.getCurrentStatusFilter();
+        
         this.init();
     }
     
@@ -47,6 +51,7 @@ class PromptListManager {
         this.initPanelToggleButton();
         this.restorePanelVisibility();
         this.initTagFilters();
+        this.initStatusFilterListener();
         this.initDragAndDrop();
     }
     
@@ -1043,6 +1048,12 @@ class PromptListManager {
         const tagFilters = document.querySelectorAll('.tag-filter');
         tagFilters.forEach(tag => {
             tag.addEventListener('click', (e) => this.handleTagFilterClick(e));
+            tag.addEventListener('keydown', (e) => this.handleTagFilterKeydown(e));
+            
+            // Ensure tags are focusable
+            tag.setAttribute('tabindex', '0');
+            tag.setAttribute('role', 'button');
+            tag.setAttribute('aria-label', `Filter by tag: ${tag.getAttribute('data-tag')}`);
         });
     }
 
@@ -1051,8 +1062,59 @@ class PromptListManager {
      */
     handleTagFilterClick(event) {
         event.preventDefault();
-        
+        this.applyTagFilter(event.currentTarget);
+    }
+    
+    /**
+     * Handle keyboard navigation for tag filters
+     */
+    handleTagFilterKeydown(event) {
         const tagElement = event.currentTarget;
+        const tagFilters = Array.from(document.querySelectorAll('.tag-filter'));
+        const currentIndex = tagFilters.indexOf(tagElement);
+        
+        switch (event.key) {
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                this.applyTagFilter(tagElement);
+                break;
+                
+            case 'ArrowRight':
+            case 'ArrowDown':
+                event.preventDefault();
+                const nextIndex = (currentIndex + 1) % tagFilters.length;
+                tagFilters[nextIndex].focus();
+                break;
+                
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                event.preventDefault();
+                const prevIndex = currentIndex === 0 ? tagFilters.length - 1 : currentIndex - 1;
+                tagFilters[prevIndex].focus();
+                break;
+                
+            case 'Home':
+                event.preventDefault();
+                tagFilters[0].focus();
+                break;
+                
+            case 'End':
+                event.preventDefault();
+                tagFilters[tagFilters.length - 1].focus();
+                break;
+                
+            case 'Escape':
+                event.preventDefault();
+                tagElement.blur();
+                break;
+        }
+    }
+    
+    /**
+     * Apply tag filter (common logic for click and keyboard)
+     */
+    applyTagFilter(tagElement) {
         const tagName = tagElement.getAttribute('data-tag');
         
         // Get current URL and parameters
@@ -1171,6 +1233,140 @@ class PromptListManager {
                 window.location.reload();
             }
         });
+    }
+    
+    /**
+     * Initialize status filter listener for dynamic tag updates
+     */
+    initStatusFilterListener() {
+        const statusInputs = document.querySelectorAll('input[name="is_active"]');
+        statusInputs.forEach(input => {
+            input.addEventListener('change', (e) => this.handleStatusFilterChange(e));
+        });
+    }
+    
+    /**
+     * Handle status filter change and update tags accordingly
+     */
+    async handleStatusFilterChange(event) {
+        const newStatus = event.target.value;
+        if (newStatus !== this.currentStatusFilter) {
+            this.currentStatusFilter = newStatus;
+            await this.updatePopularTags(newStatus);
+        }
+    }
+    
+    /**
+     * Update popular tags based on current status filter
+     */
+    async updatePopularTags(status) {
+        try {
+            this.showTagLoadingState();
+            const response = await fetch(`/api/tags/popular?is_active=${status}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.renderPopularTags(data.tags);
+            } else {
+                console.error('Failed to fetch tags:', data.error);
+                this.showTagErrorState();
+            }
+        } catch (error) {
+            console.error('Error updating tags:', error);
+            this.showTagErrorState();
+        }
+    }
+    
+    /**
+     * Render popular tags in the container with enhanced count indicators
+     */
+    renderPopularTags(tags) {
+        if (!this.tagFiltersContainer) return;
+        
+        if (tags.length === 0) {
+            this.tagFiltersContainer.innerHTML = `
+                <div class="text-center py-3">
+                    <small class="text-muted">No tags found for current status</small>
+                </div>
+            `;
+            return;
+        }
+        
+        this.tagFiltersContainer.innerHTML = tags.map(tag => {
+            const countClass = this.getCountClass(tag.usage_count);
+            const countText = this.formatCount(tag.usage_count);
+            
+            return `
+                <a href="#" 
+                   class="tag tag-filter theme-transition" 
+                   data-tag="${tag.name}"
+                   style="background-color: ${tag.color}"
+                   title="${tag.name} - ${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''}"
+                   tabindex="0"
+                   role="button"
+                   aria-label="Filter by tag: ${tag.name} (${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''})">
+                    <span class="tag-name">${tag.name}</span>
+                    <span class="tag-count ${countClass}" aria-label="${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''}">${countText}</span>
+                </a>
+            `;
+        }).join('');
+        
+        // Reinitialize tag click handlers
+        this.initTagFilters();
+    }
+    
+    /**
+     * Get CSS class for count styling based on usage count
+     */
+    getCountClass(count) {
+        if (count === 0) return 'count-zero';
+        if (count <= 2) return 'count-low';
+        if (count <= 5) return 'count-medium';
+        return 'count-high';
+    }
+    
+    /**
+     * Format count display with appropriate styling
+     */
+    formatCount(count) {
+        if (count === 0) return '0';
+        if (count > 99) return '99+';
+        return count.toString();
+    }
+    
+    /**
+     * Show loading state for tag updates
+     */
+    showTagLoadingState() {
+        if (!this.tagFiltersContainer) return;
+        this.tagFiltersContainer.innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading tags...</span>
+                </div>
+                <small class="d-block mt-2 text-muted">Updating tags...</small>
+            </div>
+        `;
+    }
+    
+    /**
+     * Show error state for tag updates
+     */
+    showTagErrorState() {
+        if (!this.tagFiltersContainer) return;
+        this.tagFiltersContainer.innerHTML = `
+            <div class="text-center py-3">
+                <small class="text-muted">Failed to load tags. Please refresh the page.</small>
+            </div>
+        `;
+    }
+    
+    /**
+     * Get current status filter value
+     */
+    getCurrentStatusFilter() {
+        const checkedInput = document.querySelector('input[name="is_active"]:checked');
+        return checkedInput ? checkedInput.value : 'all';
     }
 }
 
