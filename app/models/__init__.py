@@ -3,5 +3,6 @@
 from .base import db, BaseModel
 from .prompt import Prompt, prompt_tags
 from .tag import Tag
+from .attached_prompt import AttachedPrompt
 
-__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags']
+__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags', 'AttachedPrompt']

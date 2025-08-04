@@ -535,3 +535,264 @@ curl "http://localhost:5001/api/prompts/search?q=testing"
 # Delete a tag
 curl -X DELETE http://localhost:5001/api/tags/5
 ```
+
+## Attached Prompts API
+
+The Attached Prompts API allows you to manage relationships between prompts, creating reusable combinations.
+
+### Get Attached Prompts
+```http
+GET /api/prompts/{prompt_id}/attached
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "main_prompt_id": 1,
+      "attached_prompt_id": 2,
+      "order": 0,
+      "attached_title": "Code Review Checklist",
+      "attached_content": "1. Check for security vulnerabilities...",
+      "created_at": "2023-12-01T10:00:00Z",
+      "updated_at": "2023-12-01T10:00:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Attach a Prompt
+```http
+POST /api/prompts/{prompt_id}/attach
+```
+
+**Request Body:**
+```json
+{
+  "attached_prompt_id": 2
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "main_prompt_id": 1,
+    "attached_prompt_id": 2,
+    "order": 0,
+    "created_at": "2023-12-01T10:00:00Z",
+    "updated_at": "2023-12-01T10:00:00Z"
+  },
+  "message": "Prompt 2 successfully attached to prompt 1"
+}
+```
+
+### Detach a Prompt
+```http
+DELETE /api/prompts/{prompt_id}/attach/{attached_id}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Prompt 2 successfully detached from prompt 1"
+}
+```
+
+### Reorder Attached Prompts
+```http
+PUT /api/prompts/{prompt_id}/attached/reorder
+```
+
+**Request Body:**
+```json
+{
+  "order_data": [
+    {"attached_prompt_id": 1, "order": 0},
+    {"attached_prompt_id": 2, "order": 1},
+    {"attached_prompt_id": 3, "order": 2}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Attached prompts reordered successfully for prompt 1"
+}
+```
+
+### Get Available Prompts for Attachment
+```http
+GET /api/prompts/{prompt_id}/attached/available
+```
+
+**Query Parameters:**
+- `exclude_ids` (string): Comma-separated list of prompt IDs to exclude
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 3,
+      "title": "Debugging Tips",
+      "content": "Common debugging techniques...",
+      "is_active": true
+    }
+  ],
+  "count": 1
+}
+```
+
+### Get Popular Combinations
+```http
+GET /api/prompts/combinations/popular
+```
+
+**Query Parameters:**
+- `limit` (integer): Maximum number of combinations to return (default: 10, max: 50)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "main_prompt_id": 1,
+      "attachment_count": 3
+    },
+    {
+      "main_prompt_id": 5,
+      "attachment_count": 2
+    }
+  ],
+  "count": 2
+}
+```
+
+### Validate Attachment
+```http
+POST /api/prompts/{prompt_id}/attached/validate
+```
+
+**Request Body:**
+```json
+{
+  "attached_prompt_id": 2
+}
+```
+
+**Response (Valid):**
+```json
+{
+  "success": true,
+  "valid": true,
+  "message": "Attachment is valid"
+}
+```
+
+**Response (Invalid):**
+```json
+{
+  "success": false,
+  "valid": false,
+  "errors": [
+    "Cannot attach prompt to itself",
+    "Circular attachment detected - this would create an infinite loop"
+  ]
+}
+```
+
+### Get Attachment Statistics
+```http
+GET /api/prompts/attachments/statistics
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total_attachments": 15,
+    "prompts_with_attachments": 8,
+    "total_active_prompts": 25,
+    "attachment_coverage": 32.0
+  }
+}
+```
+
+### Examples
+
+#### Python
+```python
+import requests
+
+# Attach a prompt
+response = requests.post(f"{BASE_URL}/prompts/1/attach", json={
+    "attached_prompt_id": 2
+})
+
+# Get attached prompts
+response = requests.get(f"{BASE_URL}/prompts/1/attached")
+attached = response.json()
+
+# Get available prompts for attachment
+response = requests.get(f"{BASE_URL}/prompts/1/attached/available?exclude_ids=2,3")
+available = response.json()
+
+# Validate attachment before creating
+response = requests.post(f"{BASE_URL}/prompts/1/attached/validate", json={
+    "attached_prompt_id": 2
+})
+validation = response.json()
+```
+
+#### JavaScript
+```javascript
+// Attach a prompt
+fetch(`${BASE_URL}/prompts/1/attach`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    attached_prompt_id: 2
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+
+// Get popular combinations
+fetch(`${BASE_URL}/prompts/combinations/popular?limit=5`)
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+#### cURL
+```bash
+# Attach a prompt
+curl -X POST http://localhost:5001/api/prompts/1/attach \
+  -H "Content-Type: application/json" \
+  -d '{"attached_prompt_id": 2}'
+
+# Get attached prompts
+curl "http://localhost:5001/api/prompts/1/attached"
+
+# Detach a prompt
+curl -X DELETE http://localhost:5001/api/prompts/1/attach/2
+
+# Validate attachment
+curl -X POST http://localhost:5001/api/prompts/1/attached/validate \
+  -H "Content-Type: application/json" \
+  -d '{"attached_prompt_id": 2}'
+```

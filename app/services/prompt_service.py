@@ -4,7 +4,7 @@ Implements business rules and orchestrates data access through repositories.
 """
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from app.repositories import PromptRepository, TagRepository
+from app.repositories import PromptRepository, TagRepository, AttachedPromptRepository
 from app.models import Prompt, Tag
 from app.utils.tag_utils import parse_tag_string, validate_tag_name
 
@@ -13,16 +13,19 @@ class PromptService:
     """Service for managing prompts with business logic."""
     
     def __init__(self, prompt_repo: Optional[PromptRepository] = None, 
-                 tag_repo: Optional[TagRepository] = None):
+                 tag_repo: Optional[TagRepository] = None,
+                 attached_prompt_repo: Optional[AttachedPromptRepository] = None):
         """
         Initialize PromptService with repositories.
         
         Args:
             prompt_repo: PromptRepository instance (optional)
             tag_repo: TagRepository instance (optional)
+            attached_prompt_repo: AttachedPromptRepository instance (optional)
         """
         self.prompt_repo = prompt_repo or PromptRepository()
         self.tag_repo = tag_repo or TagRepository()
+        self.attached_prompt_repo = attached_prompt_repo or AttachedPromptRepository()
     
     def create_prompt(self, data: Dict[str, Any]) -> Prompt:
         """
@@ -217,6 +220,7 @@ class PromptService:
                 - sort_order: str - 'asc' or 'desc'
                 - page: int - Page number for pagination
                 - per_page: int - Items per page
+                - include_attachments: bool - Whether to include attached prompts
                 
         Returns:
             List of Prompt instances or paginated result dict
@@ -249,20 +253,51 @@ class PromptService:
                 prompt_ids = [p.id for p in prompts]
                 filters['ids'] = prompt_ids
         
+        # Check if we should include attachments
+        include_attachments = filters.pop('include_attachments', False)
+        
         # Handle pagination
         if 'page' in filters:
             page = filters.pop('page', 1)
             per_page = filters.pop('per_page', 20)
-            return self.prompt_repo.get_paginated_with_sorting(
+            result = self.prompt_repo.get_paginated_with_sorting(
                 page=page, 
                 per_page=per_page, 
                 sort_by=sort_by, 
                 sort_order=sort_order, 
                 **filters
             )
+            
+            # Load attachments if requested
+            if include_attachments and isinstance(result, dict) and 'items' in result:
+                for prompt in result['items']:
+                    self._load_attached_prompts(prompt)
+            
+            return result
         
         # Get filtered results with sorting
-        return self.prompt_repo.get_with_filters_and_sorting(filters, sort_by, sort_order)
+        prompts = self.prompt_repo.get_with_filters_and_sorting(filters, sort_by, sort_order)
+        
+        # Load attachments if requested
+        if include_attachments:
+            for prompt in prompts:
+                self._load_attached_prompts(prompt)
+        
+        return prompts
+    
+    def _load_attached_prompts(self, prompt: Prompt) -> None:
+        """
+        Load attached prompts for a given prompt.
+        
+        Args:
+            prompt: Prompt instance to load attachments for
+        """
+        if not hasattr(prompt, '_attached_prompts_loaded') or not prompt._attached_prompts_loaded:
+            # Get actual AttachedPrompt objects, not dictionaries
+            attached_prompts = self.attached_prompt_repo.get_attached_prompts(prompt.id)
+            # Store the data in a custom attribute to avoid SQLAlchemy relationship issues
+            prompt._attached_prompts_data = attached_prompts
+            prompt._attached_prompts_loaded = True
     
     def search_prompts(self, query: str, include_inactive: bool = False) -> List[Prompt]:
         """
@@ -429,3 +464,94 @@ class PromptService:
             logger = logging.getLogger(__name__)
             logger.error(f"Error reordering prompts: {str(e)}")
             return False
+    
+    def get_prompt_with_attachments(self, prompt_id: int) -> Optional[Prompt]:
+        """
+        Get a prompt with its attached prompts loaded.
+        
+        Args:
+            prompt_id: ID of the prompt to retrieve
+            
+        Returns:
+            Prompt instance with attached prompts loaded, or None if not found
+        """
+        return self.prompt_repo.get_with_attached_prompts(prompt_id)
+    
+    def get_prompts_with_attachments(self, include_inactive: bool = False) -> List[Prompt]:
+        """
+        Get all prompts that have attached prompts.
+        
+        Args:
+            include_inactive: Whether to include inactive prompts
+            
+        Returns:
+            List of prompts that have attached prompts
+        """
+        return self.prompt_repo.get_prompts_with_attachments(include_inactive)
+    
+    def get_prompts_with_attachments_loaded(self, include_inactive: bool = False) -> List[Prompt]:
+        """
+        Get all prompts with their attached prompts pre-loaded.
+        
+        Args:
+            include_inactive: Whether to include inactive prompts
+            
+        Returns:
+            List of prompts with attached_prompts relationship loaded
+        """
+        return self.prompt_repo.get_prompts_with_attachments_loaded(include_inactive)
+    
+    def get_available_for_attachment(self, main_prompt_id: int, exclude_ids: Optional[List[int]] = None) -> List[Prompt]:
+        """
+        Get prompts that can be attached to a specific prompt.
+        
+        Args:
+            main_prompt_id: ID of the main prompt
+            exclude_ids: List of prompt IDs to exclude
+            
+        Returns:
+            List of prompts available for attachment
+        """
+        return self.prompt_repo.get_available_for_attachment(main_prompt_id, exclude_ids)
+    
+    def get_attached_prompts_for_prompt(self, prompt_id: int) -> List[Dict[str, Any]]:
+        """
+        Get attached prompts with full details for a specific prompt.
+        
+        Args:
+            prompt_id: ID of the prompt
+            
+        Returns:
+            List of dictionaries with attached prompt details
+        """
+        return self.attached_prompt_repo.get_attached_prompts_with_details(prompt_id)
+    
+    def get_attachment_count(self, prompt_id: int) -> int:
+        """
+        Get the number of prompts attached to a specific prompt.
+        
+        Args:
+            prompt_id: ID of the prompt
+            
+        Returns:
+            Number of attached prompts
+        """
+        return self.attached_prompt_repo.get_attachment_count(prompt_id)
+    
+    def get_prompt_attachment_statistics(self) -> Dict[str, Any]:
+        """
+        Get statistics about prompt attachments.
+        
+        Returns:
+            Dictionary with attachment statistics
+        """
+        total_attachments = self.attached_prompt_repo.count()
+        prompts_with_attachments = len(self.get_prompts_with_attachments())
+        total_prompts = self.prompt_repo.count(is_active=True)
+        
+        return {
+            'total_attachments': total_attachments,
+            'prompts_with_attachments': prompts_with_attachments,
+            'total_active_prompts': total_prompts,
+            'attachment_coverage': (prompts_with_attachments / total_prompts * 100) if total_prompts > 0 else 0
+        }

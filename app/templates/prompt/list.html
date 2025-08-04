@@ -3,6 +3,15 @@
 {% block title %}Prompts - Prompt Manager{% endblock %}
 
 {% block content %}
+
+<!-- Database schema info removed - no longer needed for debugging -->
+
+<!-- Attach Instructions Panel -->
+<div id="attachInstructionsPanel" class="alert alert-info" style="display: none;">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Attachment Mode Active:</strong> Click 'Attach' on another prompt to attach it to this one.
+</div>
+
 <div class="row">
     <div class="col-md-3">
         <!-- Filters Sidebar -->
@@ -194,7 +203,7 @@
                         <div class="card prompt-card theme-surface theme-border {% if not prompt.is_active %}inactive-prompt{% endif %}">
                         <div class="card-body py-3 theme-text">
                             <!-- Header with checkbox, title and actions -->
-                            <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
                                 <!-- Drag handle -->
                                 <div class="drag-handle me-2" title="Drag to reorder">
                                     <i class="bi bi-grip-vertical text-muted"></i>
@@ -251,6 +260,12 @@
                                        title="Edit prompt">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <button class="btn btn-sm btn-outline-info attach-prompt-btn"
+                                            data-prompt-id="{{ prompt.id }}"
+                                            data-bs-toggle="tooltip" 
+                                            title="Attach another prompt">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </button>
                                     {% if prompt.is_active %}
                                         <form action="{{ url_for('prompt.archive', id=prompt.id) }}" 
                                               method="POST" 
@@ -280,7 +295,7 @@
                             
                             <!-- Description -->
                             {% if prompt.description %}
-                                <p class="card-text text-muted small mb-2">
+                                <p class="card-text text-muted small">
                                     {% if filters.get('search') %}
                                         {{ prompt.description | highlight_search(filters.get('search')) | safe }}
                                     {% else %}
@@ -293,7 +308,7 @@
                             
                             <!-- Content Preview (Collapsible) -->
                             <div class="content-preview mb-3" style="display: none;">
-                                <div class="content-header d-flex justify-content-between align-items-center mb-2">
+                                <div class="content-header d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0 text-muted">Content Preview</h6>
                                     <small class="text-muted">{{ prompt.content|length }} characters</small>
                                 </div>
@@ -310,6 +325,42 @@
                             
                             <!-- Footer with metadata -->
                             <!-- Removed updated date display -->
+                            
+                            <!-- Attached Prompts Section -->
+                            {% if prompt.attached_prompts %}
+                                <div class="attached-prompts-container" style="margin-top: -0.5rem;">
+                                    <div class="attached-prompts-list">
+                                        {% for attached in prompt.attached_prompts %}
+                                            <div class="attached-prompt-card" 
+                                                 data-main-id="{{ prompt.id }}" 
+                                                 data-attached-id="{{ attached.attached_prompt.id }}"
+                                                 data-order="{{ attached.order }}">
+                                                <div class="attached-prompt-content">
+                                                    <div class="attached-prompt-header">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-link-45deg me-1"></i>{{ attached.attached_prompt.title }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="attached-prompt-actions">
+                                                    <button class="btn btn-sm btn-outline-primary select-combination-btn"
+                                                            data-bs-toggle="tooltip" 
+                                                            title="Select combination (main + attached)"
+                                                            data-main-id="{{ prompt.id }}"
+                                                            data-attached-id="{{ attached.attached_prompt.id }}">
+                                                        <i class="bi bi-plus-circle"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger detach-prompt-btn"
+                                                            data-bs-toggle="tooltip" 
+                                                            title="Detach prompt">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -357,6 +408,8 @@
             {% endif %}
         </div>
         
+        <!-- Attachment instructions will appear here when in attach mode -->
+
         <!-- Pagination -->
         {% if pagination and pagination.total_pages > 1 %}
             <nav aria-label="Page navigation">
@@ -415,6 +468,110 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+    
+    /* Attached Prompts Styling */
+    .attached-prompts-container {
+        padding-top: 0;
+        margin-top: 0;
+    }
+    
+    .attached-prompts-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+    }
+    
+    .attached-prompt-card {
+        background: var(--theme-surface);
+        border: 1px solid var(--theme-border);
+        border-radius: 0.125rem;
+        padding: 0.0625rem 0.125rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.125rem;
+        position: relative;
+        transition: all 0.2s ease;
+        margin-left: 0.5rem;
+        margin-bottom: 0;
+        max-width: fit-content;
+    }
+    
+    .attached-prompt-card::before {
+        content: '';
+        position: absolute;
+        left: -0.5rem;
+        top: 50%;
+        width: 0.5rem;
+        height: 1px;
+        background: var(--theme-border);
+        transform: translateY(-50%);
+    }
+    
+    .attached-prompt-card:hover {
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-color: var(--theme-primary);
+    }
+    
+    .attached-prompt-card.selected {
+        background: var(--theme-primary);
+        color: white;
+        border-color: var(--theme-primary);
+    }
+    
+    .attached-prompt-content {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    
+    .attached-prompt-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0;
+        color: inherit;
+    }
+    
+    .attached-prompt-actions {
+        display: flex;
+        gap: 0.125rem;
+    }
+    
+    .attached-prompt-actions .btn {
+        padding: 0.0625rem 0.125rem;
+        font-size: 0.5rem;
+        line-height: 1;
+    }
+    
+    /* Animation for selection feedback */
+    .attached-prompt-card.selecting {
+        animation: selectPulse 0.6s ease-in-out;
+    }
+    
+    @keyframes selectPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* Responsive design for attached prompts */
+    @media (max-width: 768px) {
+        .attached-prompt-card {
+            margin-left: 0.5rem;
+            padding: 0.5rem;
+        }
+        
+        .attached-prompt-card::before {
+            left: -0.5rem;
+            width: 0.5rem;
+        }
+        
+        .attached-prompt-actions {
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -422,6 +579,8 @@
 <!-- SortableJS for drag and drop -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/prompt-list.js') }}"></script>
+
+<!-- Attach prompt functionality is now integrated into prompt-list.js -->
 <script>
     // Set merge URL for the PromptListManager
     document.addEventListener('DOMContentLoaded', function() {
@@ -454,5 +613,7 @@
         urlParams.delete('is_active');
         window.location.href = '{{ url_for("prompt.index") }}?' + urlParams.toString();
     }
+    
+    // Database info display script removed - no longer needed
 </script>
 {% endblock %}

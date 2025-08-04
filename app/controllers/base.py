@@ -28,7 +28,9 @@ class BaseController:
                 
                 missing_fields = []
                 for field in required_fields:
-                    if not data.get(field, '').strip():
+                    value = data.get(field)
+                    # Handle different types: strings, numbers, etc.
+                    if value is None or (isinstance(value, str) and not value.strip()) or value == '':
                         missing_fields.append(field)
                 
                 if missing_fields:

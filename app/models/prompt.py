@@ -29,11 +29,13 @@ class Prompt(BaseModel):
     tags = db.relationship('Tag', secondary=prompt_tags, lazy='subquery',
                           backref=db.backref('prompts', lazy=True))
     
+    # Attached prompts relationships (defined in AttachedPrompt model with backref)
+    
     def __repr__(self):
         """String representation of the prompt."""
         return f'<Prompt {self.id}: {self.title[:30]}...>'
     
-    def to_dict(self):
+    def to_dict(self, include_attached_prompts=False):
         """Convert prompt to dictionary for JSON serialization."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -45,6 +47,18 @@ class Prompt(BaseModel):
             'order': self.order,
             'tags': [tag.to_dict() for tag in self.tags]
         })
+        
+        if include_attached_prompts:
+            attached_prompts = self.get_attached_prompts()
+            base_dict['attached_prompts'] = [
+                {
+                    'id': ap.attached_prompt.id,
+                    'title': ap.attached_prompt.title,
+                    'content': ap.attached_prompt.content,
+                    'order': ap.order
+                } for ap in attached_prompts
+            ]
+        
         return base_dict
     
     @classmethod
@@ -90,3 +104,26 @@ class Prompt(BaseModel):
             errors.append("Title must be less than 255 characters")
         
         return errors
+    
+    def get_attached_prompts(self):
+        """Get all prompts attached to this prompt."""
+        # Use cached data if available
+        if hasattr(self, '_attached_prompts_data'):
+            return self._attached_prompts_data
+        
+        # Fallback to direct query
+        from .attached_prompt import AttachedPrompt
+        return AttachedPrompt.get_attached_prompts(self.id)
+    
+    def get_prompts_this_is_attached_to(self):
+        """Get all prompts that this prompt is attached to."""
+        from .attached_prompt import AttachedPrompt
+        return AttachedPrompt.get_prompts_attached_to(self.id)
+    
+    def has_attached_prompts(self):
+        """Check if this prompt has any attached prompts."""
+        return len(self.get_attached_prompts()) > 0
+    
+    def is_attached_to_any_prompt(self):
+        """Check if this prompt is attached to any other prompt."""
+        return len(self.get_prompts_this_is_attached_to()) > 0

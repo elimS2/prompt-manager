@@ -3,7 +3,7 @@ RESTful API controller for prompt management.
 Provides JSON API endpoints following REST conventions.
 """
 from flask import Blueprint, jsonify, request
-from app.services import PromptService, TagService, MergeService, CursorService
+from app.services import PromptService, TagService, MergeService, CursorService, AttachedPromptService
 from app.controllers.base import BaseController
 from functools import wraps
 
@@ -16,6 +16,12 @@ prompt_service = PromptService()
 tag_service = TagService()
 merge_service = MergeService()
 cursor_service = CursorService()
+
+# Initialize repositories for AttachedPromptService
+from app.repositories import AttachedPromptRepository, PromptRepository
+attached_prompt_repo = AttachedPromptRepository()
+prompt_repo = PromptRepository()
+attached_prompt_service = AttachedPromptService(attached_prompt_repo, prompt_repo)
 
 
 def require_json(f):
@@ -399,10 +405,12 @@ def get_statistics():
     """Get overall application statistics."""
     prompt_stats = prompt_service.get_prompt_statistics()
     tag_stats = tag_service.get_tag_statistics()
+    attachment_stats = prompt_service.get_prompt_attachment_statistics()
     
     return jsonify({
         'prompts': prompt_stats,
-        'tags': tag_stats
+        'tags': tag_stats,
+        'attachments': attachment_stats
     }), 200
 
 
@@ -476,3 +484,341 @@ def send_prompt_to_cursor(prompt_id):
         result = cursor_service.send_prompt_to_cursor(prompt.content, prompt.title)
     
     return jsonify(result), 200 if result['success'] else 400
+
+
+# Attached Prompts endpoints
+@api_bp.route('/prompts/<int:prompt_id>/attached', methods=['GET'])
+@BaseController.handle_service_error
+def get_attached_prompts(prompt_id):
+    """
+    Get all prompts attached to the specified prompt.
+    
+    Returns:
+        JSON response with attached prompts data
+    """
+    try:
+        attached_prompts = attached_prompt_service.get_attached_prompts_with_details(prompt_id)
+        
+        return jsonify({
+            'success': True,
+            'data': attached_prompts,
+            'count': len(attached_prompts)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@api_bp.route('/prompts/<int:prompt_id>/attach', methods=['POST'])
+@require_json
+@BaseController.validate_request_data(['attached_prompt_id'])
+@BaseController.handle_service_error
+def attach_prompt(prompt_id):
+    """
+    Attach a prompt to the specified prompt.
+    
+    Required fields:
+    - attached_prompt_id: ID of the prompt to attach
+    
+    Returns:
+        JSON response with created attachment data
+    """
+    try:
+        data = request.get_json()
+        attached_id = data['attached_prompt_id']
+        
+        # Validate input
+        if not isinstance(attached_id, int):
+            return jsonify({
+                'success': False,
+                'error': 'attached_prompt_id must be an integer'
+            }), 400
+        
+        # Create attachment
+        attached_prompt = attached_prompt_service.attach_prompt(prompt_id, attached_id)
+        
+        return jsonify({
+            'success': True,
+            'data': attached_prompt.to_dict(),
+            'message': f'Prompt {attached_id} successfully attached to prompt {prompt_id}'
+        }), 201
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@api_bp.route('/prompts/<int:prompt_id>/attach/<int:attached_id>', methods=['DELETE'])
+@BaseController.handle_service_error
+def detach_prompt(prompt_id, attached_id):
+    """
+    Detach a prompt from the specified prompt.
+    
+    Returns:
+        JSON response with operation result
+    """
+    try:
+        success = attached_prompt_service.detach_prompt(prompt_id, attached_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Prompt {attached_id} successfully detached from prompt {prompt_id}'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Attachment between prompt {prompt_id} and {attached_id} not found'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@api_bp.route('/prompts/<int:prompt_id>/attached/reorder', methods=['PUT'])
+@require_json
+@BaseController.validate_request_data(['order_data'])
+@BaseController.handle_service_error
+def reorder_attached_prompts(prompt_id):
+    """
+    Reorder attached prompts for a main prompt.
+    
+    Required fields:
+    - order_data: List of dictionaries with 'attached_prompt_id' and 'order' keys
+    
+    Example:
+    {
+        "order_data": [
+            {"attached_prompt_id": 1, "order": 0},
+            {"attached_prompt_id": 2, "order": 1}
+        ]
+    }
+    
+    Returns:
+        JSON response with operation result
+    """
+    try:
+        data = request.get_json()
+        order_data = data['order_data']
+        
+        # Validate order_data structure
+        if not isinstance(order_data, list):
+            return jsonify({
+                'success': False,
+                'error': 'order_data must be a list'
+            }), 400
+        
+        for item in order_data:
+            if not isinstance(item, dict) or 'attached_prompt_id' not in item or 'order' not in item:
+                return jsonify({
+                    'success': False,
+                    'error': 'Each item in order_data must contain attached_prompt_id and order'
+                }), 400
+        
+        # Reorder attachments
+        success = attached_prompt_service.reorder_attachments(prompt_id, order_data)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Attached prompts reordered successfully for prompt {prompt_id}'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to reorder attached prompts'
+            }), 500
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@api_bp.route('/prompts/<int:prompt_id>/attached/available', methods=['GET'])
+@BaseController.handle_service_error
+def get_available_for_attachment(prompt_id):
+    """
+    Get prompts that can be attached to the specified prompt.
+    
+    Query parameters:
+    - exclude_ids: Comma-separated list of prompt IDs to exclude
+    
+    Returns:
+        JSON response with available prompts
+    """
+    try:
+        exclude_ids_param = request.args.get('exclude_ids', '')
+        exclude_ids = None
+        
+        if exclude_ids_param:
+            try:
+                exclude_ids = [int(id.strip()) for id in exclude_ids_param.split(',') if id.strip()]
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'exclude_ids must be comma-separated integers'
+                }), 400
+        
+        available_prompts = attached_prompt_service.get_available_for_attachment(prompt_id, exclude_ids)
+        
+        return jsonify({
+            'success': True,
+            'data': [prompt.to_dict() for prompt in available_prompts],
+            'count': len(available_prompts)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@api_bp.route('/prompts/combinations/popular', methods=['GET'])
+@BaseController.handle_service_error
+def get_popular_combinations():
+    """
+    Get most frequently used prompt combinations.
+    
+    Query parameters:
+    - limit: Maximum number of combinations to return (default: 10, max: 50)
+    
+    Returns:
+        JSON response with popular combinations data
+    """
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        
+        # Validate limit
+        if limit < 1 or limit > 50:
+            return jsonify({
+                'success': False,
+                'error': 'limit must be between 1 and 50'
+            }), 400
+        
+        combinations = attached_prompt_service.get_popular_combinations(limit)
+        
+        return jsonify({
+            'success': True,
+            'data': combinations,
+            'count': len(combinations)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@api_bp.route('/prompts/<int:prompt_id>/attached/validate', methods=['POST'])
+@require_json
+@BaseController.validate_request_data(['attached_prompt_id'])
+@BaseController.handle_service_error
+def validate_attachment(prompt_id):
+    """
+    Validate if an attachment would be valid without creating it.
+    
+    Required fields:
+    - attached_prompt_id: ID of the prompt to validate for attachment
+    
+    Returns:
+        JSON response with validation result
+    """
+    try:
+        data = request.get_json()
+        attached_id = data['attached_prompt_id']
+        
+        # Validate input
+        if not isinstance(attached_id, int):
+            return jsonify({
+                'success': False,
+                'error': 'attached_prompt_id must be an integer'
+            }), 400
+        
+        # Validate attachment
+        errors = attached_prompt_service.validate_attachment(prompt_id, attached_id)
+        
+        if errors:
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'errors': errors
+            }), 400
+        else:
+            return jsonify({
+                'success': True,
+                'valid': True,
+                'message': 'Attachment is valid'
+            }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@api_bp.route('/prompts/attachments/statistics', methods=['GET'])
+@BaseController.handle_service_error
+def get_attachment_statistics():
+    """
+    Get statistics about prompt attachments.
+    
+    Returns:
+        JSON response with attachment statistics
+    """
+    try:
+        stats = prompt_service.get_prompt_attachment_statistics()
+        
+        return jsonify({
+            'success': True,
+            'data': stats
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@api_bp.route('/prompts/<int:main_id>/attach/<int:attached_id>/use', methods=['POST'])
+@BaseController.handle_service_error
+def increment_attachment_usage(main_id, attached_id):
+    """
+    Increment usage count for a specific attachment.
+    
+    Returns:
+        JSON response with operation result
+    """
+    try:
+        success = attached_prompt_service.increment_usage(main_id, attached_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Usage count incremented for attachment {main_id} -> {attached_id}'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Attachment {main_id} -> {attached_id} not found'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

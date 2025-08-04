@@ -3,8 +3,12 @@
  * Handles all interactive functionality for the prompts list page
  */
 
+console.log('🚀 PromptListManager script loaded!');
+
 class PromptListManager {
     constructor() {
+        console.log('🔧 PromptListManager constructor called');
+        
         this.mergeBtn = document.getElementById('mergeBtn');
         this.checkboxes = document.querySelectorAll('.prompt-checkbox');
         this.toggleButtons = document.querySelectorAll('.toggle-content-btn');
@@ -16,6 +20,15 @@ class PromptListManager {
         // New properties for multi-select functionality
         this.selectedPrompts = new Set();
         this.copyAllBtn = null;
+        
+        // Properties for attach mode
+        this.attachMode = false;
+        this.mainPromptId = null;
+        
+        // Combination tracking
+        this.lastSelectionTime = null;
+        this.lastSelectedPromptId = null;
+        this.combinationSelectionTimeout = null;
         
         // Combined content panel elements
         this.combinedContentPanel = document.getElementById('combinedContentPanel');
@@ -39,6 +52,7 @@ class PromptListManager {
     }
     
     init() {
+        console.log('🚀 PromptListManager init() called');
         this.initCheckboxes();
         this.initToggleButtons();
         this.initCopyButtons();
@@ -53,6 +67,9 @@ class PromptListManager {
         this.initTagFilters();
         this.initStatusFilterListener();
         this.initDragAndDrop();
+        this.initAttachedPrompts();
+        this.initAttachPromptButtons();
+        console.log('✅ PromptListManager initialization complete');
     }
     
     /**
@@ -122,6 +139,42 @@ class PromptListManager {
         if (checkbox.checked) {
             this.selectedPrompts.add(promptId);
             card.classList.add('selected');
+            
+            // Check if this is part of a combination selection
+            const now = Date.now();
+            if (this.lastSelectionTime && (now - this.lastSelectionTime) < 100) {
+                // This is likely a combination selection
+                const previousPromptId = this.lastSelectedPromptId;
+                if (previousPromptId && previousPromptId !== promptId) {
+                    // Handle combination copy using existing logic
+                    this.handleCombinationCopy(previousPromptId, promptId);
+                    
+                    // Clear tracking
+                    this.lastSelectionTime = null;
+                    this.lastSelectedPromptId = null;
+                    if (this.combinationSelectionTimeout) {
+                        clearTimeout(this.combinationSelectionTimeout);
+                        this.combinationSelectionTimeout = null;
+                    }
+                    return;
+                }
+            }
+            
+            // Update tracking for potential combination
+            this.lastSelectionTime = now;
+            this.lastSelectedPromptId = promptId;
+            
+            // Clear previous timeout
+            if (this.combinationSelectionTimeout) {
+                clearTimeout(this.combinationSelectionTimeout);
+            }
+            
+            // Set timeout to clear tracking if no combination occurs
+            this.combinationSelectionTimeout = setTimeout(() => {
+                this.lastSelectionTime = null;
+                this.lastSelectedPromptId = null;
+            }, 100);
+            
         } else {
             this.selectedPrompts.delete(promptId);
             card.classList.remove('selected');
@@ -1367,6 +1420,579 @@ class PromptListManager {
     getCurrentStatusFilter() {
         const checkedInput = document.querySelector('input[name="is_active"]:checked');
         return checkedInput ? checkedInput.value : 'all';
+    }
+    
+    /**
+     * Initialize attached prompt functionality
+     */
+    initAttachedPrompts() {
+        this.initAttachedPromptCards();
+        this.initAttachPromptButtons();
+        this.initDetachPromptButtons();
+    }
+    
+    /**
+     * Initialize attached prompt cards
+     */
+    initAttachedPromptCards() {
+        const attachedCards = document.querySelectorAll('.attached-prompt-card');
+        
+        attachedCards.forEach(card => {
+            // Add click handler for the entire card
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.select-combination-btn')) {
+                    this.handleAttachedPromptSelection(card);
+                }
+            });
+            
+            // Add hover effects
+            card.addEventListener('mouseenter', () => {
+                card.style.cursor = 'pointer';
+            });
+        });
+    }
+    
+    /**
+     * Handle selection of attached prompt combination
+     */
+    async handleAttachedPromptSelection(card) {
+        const mainId = card.dataset.mainId;
+        const attachedId = card.dataset.attachedId;
+        
+        // Select both prompts
+        const mainCheckbox = document.getElementById(`prompt-${mainId}`);
+        const attachedCheckbox = document.getElementById(`prompt-${attachedId}`);
+        
+        if (mainCheckbox && attachedCheckbox) {
+            mainCheckbox.checked = true;
+            attachedCheckbox.checked = true;
+            
+            // Trigger change events to update UI
+            mainCheckbox.dispatchEvent(new Event('change'));
+            attachedCheckbox.dispatchEvent(new Event('change'));
+            
+            // Visual feedback
+            card.classList.add('selecting');
+            setTimeout(() => card.classList.remove('selecting'), 600);
+            
+            // Use the unified combination copy logic
+            await this.handleCombinationCopy(mainId, attachedId);
+        } else {
+            this.showToast('Error: Could not find prompt checkboxes', 'error');
+        }
+    }
+    
+    /**
+     * Get prompt content via API
+     */
+    async getPromptContent(promptId) {
+        try {
+            const response = await fetch(`/api/prompts/${promptId}`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.prompt;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching prompt:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Handle combination copy using existing formatCombinedContent logic
+     */
+    async handleCombinationCopy(mainId, attachedId) {
+        try {
+            const [mainPrompt, attachedPrompt] = await Promise.all([
+                this.getPromptContent(mainId),
+                this.getPromptContent(attachedId)
+            ]);
+            
+            if (mainPrompt && attachedPrompt) {
+                // Use the same formatCombinationContent method for consistency
+                const combinedContent = this.formatCombinationContent(
+                    mainPrompt.content, 
+                    attachedPrompt.content, 
+                    mainPrompt.title, 
+                    attachedPrompt.title
+                );
+                
+                // Copy to clipboard
+                this.copyToClipboard(combinedContent, document.querySelector(`#prompt-${mainId}`));
+                
+                // Show success message
+                this.showToast('Combination selected and copied to clipboard!', 'success');
+                
+                // Increment usage count
+                this.incrementCombinationUsage(mainId, attachedId);
+            } else {
+                this.showToast('Error: Could not load prompt content', 'error');
+            }
+        } catch (error) {
+            console.error('Error handling combination copy:', error);
+            this.showToast('Error: Could not load prompt content', 'error');
+        }
+    }
+    
+    /**
+     * Format combination content for clipboard
+     */
+    formatCombinationContent(mainContent, attachedContent, mainTitle, attachedTitle) {
+        // Use the existing formatCombinedContent method for consistency
+        const selectedContents = [
+            { content: mainContent, title: mainTitle },
+            { content: attachedContent, title: attachedTitle }
+        ];
+        return this.formatCombinedContent(selectedContents);
+    }
+    
+    /**
+     * Increment usage count for combination
+     */
+    async incrementCombinationUsage(mainId, attachedId) {
+        try {
+            const response = await fetch(`/api/prompts/${mainId}/attach/${attachedId}/use`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (!response.ok) {
+                console.warn('Failed to increment usage count:', response.status);
+            }
+        } catch (error) {
+            console.warn('Error incrementing usage count:', error);
+        }
+    }
+    
+    /**
+     * Initialize attach prompt buttons
+     */
+    initAttachPromptButtons() {
+        console.log('🔗 Initializing attach prompt buttons...');
+        const attachButtons = document.querySelectorAll('.attach-prompt-btn');
+        console.log('Found attach buttons:', attachButtons.length);
+        
+        attachButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                console.log('🔘 Attach button clicked!');
+                e.preventDefault();
+                const promptId = button.dataset.promptId;
+                console.log('Prompt ID:', promptId);
+                
+                // Debug the condition
+                console.log('🔍 Condition check:');
+                console.log('  - attachMode:', this.attachMode);
+                console.log('  - promptId:', promptId);
+                console.log('  - mainPromptId:', this.mainPromptId);
+                console.log('  - promptId != mainPromptId:', promptId != this.mainPromptId);
+                console.log('  - attachMode && promptId != mainPromptId:', this.attachMode && promptId != this.mainPromptId);
+                
+                // If we're in attach mode and this is not the main prompt, attach it
+                if (this.attachMode && parseInt(promptId) != this.mainPromptId) {
+                                console.log('🎯 In attach mode, attaching prompt:', promptId);
+            this.attachPromptToMain(parseInt(promptId));
+                } else if (!this.attachMode) {
+                    // If not in attach mode, enter attach mode
+                    console.log('🔄 Entering attach mode for prompt:', promptId);
+                    this.toggleAttachMode(promptId, button);
+                } else {
+                    // If in attach mode and this is the main prompt, do nothing
+                    console.log('⏭️ Already in attach mode for this prompt, ignoring click');
+                }
+            });
+        });
+    }
+    
+    /**
+     * Toggle attach mode for a prompt
+     */
+    toggleAttachMode(promptId, button) {
+        console.log('🔄 toggleAttachMode called with promptId:', promptId);
+        console.log('Current attachMode:', this.attachMode);
+        
+        // If already in attach mode and this is the same prompt, cancel it
+        if (this.attachMode && parseInt(promptId) == this.mainPromptId) {
+            console.log('Already in attach mode for this prompt, cancelling...');
+            this.cancelAttachMode();
+            return;
+        }
+        
+        // Enter attach mode
+        console.log('🟢 Entering attach mode for prompt:', promptId);
+        this.attachMode = true;
+        this.mainPromptId = parseInt(promptId);
+        
+        // Update button appearance
+        button.innerHTML = '<i class="bi bi-x-circle"></i>';
+        button.className = 'btn btn-sm btn-danger attach-prompt-btn';
+        button.setAttribute('title', 'Cancel attachment mode');
+        
+        // Show instructions
+        this.showAttachInstructions();
+        
+        // No need to add separate click handlers - they're handled in initAttachPromptButtons
+        
+        // Add class to body for styling
+        document.body.classList.add('attach-mode-active');
+        console.log('✅ Attach mode activated successfully');
+    }
+    
+    /**
+     * Cancel attach mode
+     */
+    cancelAttachMode() {
+        this.attachMode = false;
+        this.mainPromptId = null;
+        
+        // Reset all attach buttons
+        const attachButtons = document.querySelectorAll('.attach-prompt-btn');
+        attachButtons.forEach(button => {
+            button.innerHTML = '<i class="bi bi-link-45deg"></i>';
+            button.className = 'btn btn-sm btn-outline-info attach-prompt-btn';
+            button.setAttribute('title', 'Attach another prompt');
+            button.onclick = null; // Remove temporary handlers
+        });
+        
+        // Hide instructions
+        this.hideAttachInstructions();
+        
+        // No need to reinitialize - buttons are handled by the main click handler
+        
+        // Remove class from body
+        document.body.classList.remove('attach-mode-active');
+    }
+    
+    /**
+     * Show attach instructions
+     */
+    showAttachInstructions() {
+        // Show existing instructions panel
+        const instructionsPanel = document.getElementById('attachInstructionsPanel');
+        if (instructionsPanel) {
+            const mainPromptTitle = this.getPromptTitle(this.mainPromptId);
+            instructionsPanel.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>🔗 Attachment Mode Active</strong><br>
+                        Main prompt: <strong>${mainPromptTitle}</strong><br>
+                        Click "Attach" on another prompt to attach it to this one
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.promptListManager.cancelAttachMode()">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                </div>
+            `;
+            instructionsPanel.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Hide attach instructions
+     */
+    hideAttachInstructions() {
+        const instructionsPanel = document.getElementById('attachInstructionsPanel');
+        if (instructionsPanel) {
+            instructionsPanel.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Add click handlers for attachment
+     */
+    addAttachClickHandlers() {
+        console.log('🔗 Adding click handlers to other attach buttons...');
+        const attachButtons = document.querySelectorAll('.attach-prompt-btn');
+        let handlerCount = 0;
+        
+        attachButtons.forEach(button => {
+            const promptId = button.dataset.promptId;
+            
+            // Skip the main prompt button
+            if (promptId == this.mainPromptId) {
+                console.log('⏭️ Skipping main prompt button:', promptId);
+                return;
+            }
+            
+            // Add temporary click handler
+            button.onclick = (e) => {
+                console.log('🎯 Secondary attach button clicked for prompt:', promptId);
+                e.preventDefault();
+                e.stopPropagation();
+                this.attachPromptToMain(promptId);
+            };
+            handlerCount++;
+        });
+        
+        console.log(`✅ Added ${handlerCount} click handlers to other buttons`);
+    }
+    
+    /**
+     * Attach a prompt to the main prompt
+     */
+    async attachPromptToMain(attachedPromptId) {
+        console.log('🔗 Starting attachment process...');
+        console.log('Main prompt ID:', this.mainPromptId);
+        console.log('Attached prompt ID:', attachedPromptId);
+        
+        try {
+            const mainTitle = this.getPromptTitle(this.mainPromptId);
+            const attachedTitle = this.getPromptTitle(attachedPromptId);
+            
+            console.log('Main prompt title:', mainTitle);
+            console.log('Attached prompt title:', attachedTitle);
+            
+            // Show confirmation
+            if (!confirm(`Attach "${attachedTitle}" to "${mainTitle}"?`)) {
+                console.log('❌ User cancelled attachment');
+                return;
+            }
+            
+            // Show loading state
+            this.showToast('Attaching prompt...', 'info');
+            
+            console.log('📡 Making API request to:', `/api/prompts/${this.mainPromptId}/attach`);
+            
+            const response = await fetch(`/api/prompts/${this.mainPromptId}/attach`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    attached_prompt_id: attachedPromptId
+                })
+            });
+            
+            console.log('📡 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('❌ API Error:', errorData);
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('📊 Response data:', data);
+            
+            if (data.success) {
+                console.log('✅ Attachment successful!');
+                this.showToast(`Successfully attached "${attachedTitle}" to "${mainTitle}"!`, 'success');
+                this.cancelAttachMode();
+                
+                // Refresh the page to show updated attached prompts
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                console.error('❌ API returned success=false:', data);
+                throw new Error(data.error || 'Failed to attach prompt');
+            }
+            
+        } catch (error) {
+            console.error('❌ Attach error:', error);
+            this.showToast(`Failed to attach prompt: ${error.message}`, 'error');
+        }
+    }
+    
+    /**
+     * Get prompt title by ID
+     */
+    getPromptTitle(promptId) {
+        const promptCard = document.querySelector(`[data-prompt-id="${promptId}"]`) || 
+                          document.querySelector(`.prompt-card[data-prompt-id="${promptId}"]`);
+        
+        if (promptCard) {
+            const titleElement = promptCard.querySelector('.card-title');
+            if (titleElement) {
+                return titleElement.textContent.trim();
+            }
+        }
+        
+        return `Prompt ${promptId}`;
+    }
+    
+    // Removed showAttachPromptModal - now using toggleAttachMode
+    
+    /**
+     * Load available prompts for attachment
+     */
+    async loadAvailablePrompts(mainPromptId, searchQuery = '') {
+        const listContainer = document.getElementById('availablePromptsList');
+        
+        try {
+            let url = `/api/prompts/${mainPromptId}/attached/available`;
+            if (searchQuery) {
+                url += `?search=${encodeURIComponent(searchQuery)}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.renderAvailablePrompts(data.data, mainPromptId);
+            } else {
+                listContainer.innerHTML = '<div class="text-center text-danger">Failed to load prompts</div>';
+            }
+        } catch (error) {
+            console.error('Error loading available prompts:', error);
+            listContainer.innerHTML = '<div class="text-center text-danger">Error loading prompts</div>';
+        }
+    }
+    
+    /**
+     * Render available prompts in the modal
+     */
+    renderAvailablePrompts(prompts, mainPromptId) {
+        const listContainer = document.getElementById('availablePromptsList');
+        
+        if (prompts.length === 0) {
+            listContainer.innerHTML = '<div class="text-center text-muted">No prompts available for attachment</div>';
+            return;
+        }
+        
+        const promptsHtml = prompts.map(prompt => `
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${prompt.title}</h6>
+                    <small class="text-muted">${prompt.content.substring(0, 100)}${prompt.content.length > 100 ? '...' : ''}</small>
+                </div>
+                <button class="btn btn-sm btn-primary attach-prompt-item-btn" 
+                        data-prompt-id="${prompt.id}" 
+                        data-main-prompt-id="${mainPromptId}">
+                    Attach
+                </button>
+            </div>
+        `).join('');
+        
+        listContainer.innerHTML = promptsHtml;
+        
+        // Add click handlers for attach buttons
+        listContainer.querySelectorAll('.attach-prompt-item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const promptId = btn.dataset.promptId;
+                this.attachPrompt(mainPromptId, promptId);
+            });
+        });
+    }
+    
+    /**
+     * Setup search functionality in the modal
+     */
+    setupPromptSearch(mainPromptId) {
+        const searchInput = document.getElementById('promptSearch');
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.loadAvailablePrompts(mainPromptId, e.target.value);
+            }, 300);
+        });
+    }
+    
+    /**
+     * Attach a prompt to another prompt
+     */
+    async attachPrompt(mainPromptId, attachedPromptId) {
+        try {
+            const response = await fetch(`/api/prompts/${mainPromptId}/attach`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    attached_prompt_id: parseInt(attachedPromptId)
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast('Prompt attached successfully!', 'success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('attachPromptModal'));
+                modal.hide();
+                
+                // Reload page to show new attachment
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                this.showToast(data.error || 'Failed to attach prompt', 'error');
+            }
+        } catch (error) {
+            console.error('Error attaching prompt:', error);
+            this.showToast('Error attaching prompt', 'error');
+        }
+    }
+    
+    /**
+     * Initialize detach prompt buttons
+     */
+    initDetachPromptButtons() {
+        const detachButtons = document.querySelectorAll('.detach-prompt-btn');
+        
+        detachButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const card = button.closest('.attached-prompt-card');
+                const mainId = card.dataset.mainId;
+                const attachedId = card.dataset.attachedId;
+                
+                if (confirm('Are you sure you want to detach this prompt?')) {
+                    this.detachPrompt(mainId, attachedId);
+                }
+            });
+        });
+    }
+    
+    /**
+     * Detach a prompt from another prompt
+     */
+    async detachPrompt(mainPromptId, attachedPromptId) {
+        try {
+            const response = await fetch(`/api/prompts/${mainPromptId}/attach/${attachedPromptId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast('Prompt detached successfully!', 'success');
+                
+                // Remove the card from DOM
+                const card = document.querySelector(`[data-main-id="${mainPromptId}"][data-attached-id="${attachedPromptId}"]`);
+                if (card) {
+                    card.remove();
+                    
+                    // Update attachment count
+                    const container = card.closest('.attached-prompts-container');
+                    if (container) {
+                        const remainingCards = container.querySelectorAll('.attached-prompt-card');
+                        const header = container.querySelector('.attached-prompts-header small');
+                        if (header) {
+                            header.innerHTML = `<i class="bi bi-link-45deg me-1"></i>Attached Prompts (${remainingCards.length})`;
+                        }
+                        
+                        // Hide container if no more attachments
+                        if (remainingCards.length === 0) {
+                            container.style.display = 'none';
+                        }
+                    }
+                }
+            } else {
+                this.showToast(data.error || 'Failed to detach prompt', 'error');
+            }
+        } catch (error) {
+            console.error('Error detaching prompt:', error);
+            this.showToast('Error detaching prompt', 'error');
+        }
     }
 }
 

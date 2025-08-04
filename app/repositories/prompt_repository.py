@@ -3,7 +3,7 @@ Repository for Prompt model with specific query methods.
 """
 from typing import List, Optional, Dict, Any
 from sqlalchemy import or_, and_, func
-from app.models import Prompt, Tag, prompt_tags
+from app.models import Prompt, Tag, prompt_tags, AttachedPrompt
 from .base import BaseRepository
 
 
@@ -547,3 +547,81 @@ class PromptRepository(BaseRepository[Prompt]):
         except Exception:
             self.rollback()
             return False
+    
+    def get_with_attached_prompts(self, prompt_id: int) -> Optional[Prompt]:
+        """
+        Get a prompt with its attached prompts loaded.
+        
+        Args:
+            prompt_id: ID of the prompt to retrieve
+            
+        Returns:
+            Prompt instance with attached_prompts relationship loaded, or None if not found
+        """
+        return self.model.query.options(
+            self.db.joinedload(Prompt.attached_prompts).joinedload(AttachedPrompt.attached_prompt)
+        ).filter_by(id=prompt_id).first()
+    
+    def get_prompts_with_attachments(self, include_inactive: bool = False) -> List[Prompt]:
+        """
+        Get all prompts that have attached prompts.
+        
+        Args:
+            include_inactive: Whether to include inactive prompts
+            
+        Returns:
+            List of prompts that have attached prompts
+        """
+        query = self.model.query.join(AttachedPrompt, Prompt.id == AttachedPrompt.main_prompt_id)
+        
+        if not include_inactive:
+            query = query.filter(self.model.is_active == True)
+        
+        return query.distinct().all()
+    
+    def get_prompts_with_attachments_loaded(self, include_inactive: bool = False) -> List[Prompt]:
+        """
+        Get all prompts with their attached prompts pre-loaded.
+        
+        Args:
+            include_inactive: Whether to include inactive prompts
+            
+        Returns:
+            List of prompts with attached_prompts relationship loaded
+        """
+        query = self.model.query.options(
+            self.db.joinedload(Prompt.attached_prompts).joinedload(AttachedPrompt.attached_prompt)
+        )
+        
+        if not include_inactive:
+            query = query.filter(self.model.is_active == True)
+        
+        return query.all()
+    
+    def get_available_for_attachment(self, main_prompt_id: int, exclude_ids: Optional[List[int]] = None) -> List[Prompt]:
+        """
+        Get prompts that can be attached to a specific prompt.
+        
+        Args:
+            main_prompt_id: ID of the main prompt
+            exclude_ids: List of prompt IDs to exclude (e.g., already attached)
+            
+        Returns:
+            List of prompts available for attachment
+        """
+        # Get IDs of prompts already attached to this main prompt
+        attached_ids = [
+            ap.attached_prompt_id 
+            for ap in AttachedPrompt.query.filter_by(main_prompt_id=main_prompt_id).all()
+        ]
+        
+        # Add the main prompt itself to exclude list
+        exclude_ids = exclude_ids or []
+        exclude_ids.append(main_prompt_id)
+        exclude_ids.extend(attached_ids)
+        
+        # Get available prompts
+        return self.model.query.filter(
+            self.model.is_active == True,
+            ~self.model.id.in_(exclude_ids)
+        ).order_by(self.model.title).all()

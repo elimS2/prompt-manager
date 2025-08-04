@@ -2290,3 +2290,307 @@ pre {
         min-width: 1.25rem;
     }
 }
+
+/* Attach Prompt Modal Styles */
+#attachPromptModal {
+    z-index: 1050 !important;
+}
+
+#attachPromptModal .modal-dialog {
+    max-width: 800px;
+    z-index: 1051 !important;
+}
+
+#attachPromptModal .modal-content {
+    z-index: 1052 !important;
+    position: relative;
+}
+
+#attachPromptModal .modal-backdrop {
+    z-index: 1049 !important;
+}
+
+/* Ensure modal is properly positioned and visible */
+#attachPromptModal.show {
+    display: block !important;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#attachPromptModal .modal-dialog {
+    position: relative;
+    margin: 1.75rem auto;
+    pointer-events: auto;
+}
+
+/* Ensure buttons are clickable */
+.select-prompt-btn {
+    position: relative;
+    z-index: 1053 !important;
+    pointer-events: auto !important;
+}
+
+.prompt-item {
+    position: relative;
+    z-index: 1053 !important;
+}
+
+.attach-prompt-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.prompt-item {
+    transition: all 0.2s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.prompt-item:hover {
+    background-color: var(--surface-hover);
+    border-left-color: var(--primary-color);
+}
+
+.prompt-item.active {
+    background-color: var(--primary-light);
+    border-left-color: var(--primary-color);
+}
+
+.prompt-item .prompt-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.prompt-item .prompt-content {
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.prompt-item .prompt-tags {
+    margin-top: 0.5rem;
+}
+
+.prompt-item .prompt-tags .badge {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+}
+
+.select-prompt-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.select-prompt-btn:hover {
+    transform: translateY(-1px);
+}
+
+.prompt-item.active .select-prompt-btn {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+#selectedPromptPreview {
+    border: 2px solid var(--primary-color);
+    border-radius: 0.5rem;
+    background-color: var(--primary-light);
+}
+
+#selectedPromptPreview .card {
+    border: none;
+    background-color: transparent;
+}
+
+#selectedPromptPreview .card-title {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+#selectedPromptPreview .card-text {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.search-highlight {
+    background-color: var(--warning-color);
+    color: var(--text-inverse);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+#searchLoading {
+    color: var(--text-secondary);
+}
+
+#noResults {
+    color: var(--text-muted);
+}
+
+#searchError {
+    border-color: var(--danger-color);
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+}
+
+/* Dark theme adjustments for attach prompt modal */
+[data-theme="dark"] .prompt-item:hover {
+    background-color: var(--surface-hover);
+}
+
+[data-theme="dark"] .prompt-item.active {
+    background-color: var(--primary-light);
+}
+
+[data-theme="dark"] #selectedPromptPreview {
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .search-highlight {
+    background-color: var(--warning-color);
+    color: var(--text-inverse);
+}
+
+[data-theme="dark"] #searchError {
+    background-color: var(--danger-light);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+/* Attach Mode Styles */
+.attach-prompt-btn.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+.attach-prompt-btn.btn-danger:hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
+}
+
+#attachInstructionsPanel {
+    border: 2px solid var(--info-color);
+    background-color: var(--info-light);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+#attachInstructionsPanel strong {
+    color: var(--text-primary);
+}
+
+/* Highlight attachable prompts in attach mode */
+.attach-mode-active .attach-prompt-btn:not(.btn-danger) {
+    background-color: var(--success-light);
+    border-color: var(--success-color);
+    color: var(--success-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Dark theme adjustments for attach mode */
+[data-theme="dark"] #attachInstructionsPanel {
+    background-color: var(--info-light);
+    border-color: var(--info-color);
+}
+
+[data-theme="dark"] .attach-mode-active .attach-prompt-btn:not(.btn-danger) {
+    background-color: var(--success-light);
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+#attachPromptPanel .card-header {
+    background-color: var(--primary-light);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.prompt-item-card {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--border-color);
+}
+
+.prompt-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-item-card.border-primary {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.prompt-item-card .card-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.prompt-item-card .card-text {
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+}
+
+.prompt-item-card .prompt-tags {
+    margin-bottom: 1rem;
+}
+
+.prompt-item-card .prompt-tags .badge {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+}
+
+.select-prompt-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.select-prompt-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Dark theme adjustments for inline panel */
+[data-theme="dark"] #attachPromptPanel {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] #attachPromptPanel .card-header {
+    background-color: var(--primary-light);
+}
+
+[data-theme="dark"] .prompt-item-card {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .prompt-item-card:hover {
+    border-color: var(--primary-color);
+}
+
+/* Responsive design for inline attach prompt panel */
+@media (max-width: 768px) {
+    #attachPromptPanel {
+        margin: 0.5rem;
+    }
+    
+    .prompt-item-card {
+        margin-bottom: 1rem;
+    }
+    
+    .prompt-item-card .card-title {
+        font-size: 0.9rem;
+    }
+    
+    .prompt-item-card .card-text {
+        font-size: 0.8rem;
+    }
+    
+    .select-prompt-btn {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+}

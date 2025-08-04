@@ -2,7 +2,7 @@
 Web controller for prompt management.
 Handles HTTP requests for the web interface.
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from app.services import PromptService, TagService, MergeService
 from app.controllers.base import BaseController
 from app.utils.tag_utils import parse_tag_string, format_tags_for_display
@@ -43,6 +43,10 @@ def register_filters(app):
 @prompt_bp.route('/prompts')
 def index():
     """Display list of prompts with filtering and pagination."""
+    
+    # DATABASE SCHEMA INFORMATION - STATIC DISPLAY
+    # Database info removed - no longer needed for debugging
+    
     # Get pagination parameters
     pagination_params = BaseController.get_pagination_params()
     
@@ -50,7 +54,8 @@ def index():
     filters = BaseController.get_filter_params()
     filters.update(pagination_params)
     
-    # Get prompts
+    # Enable attached prompts loading
+    filters['include_attachments'] = True
     result = prompt_service.get_prompts_by_filters(filters)
     
     # Get current status filter and convert to boolean

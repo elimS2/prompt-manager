@@ -60,3 +60,12 @@ local_settings.py
 
 # Migrations
 migrations/versions/*
+
+# Temporary debug files
+page_content_*.html
+*_debug.py
+*_test.py
+check_*.py
+apply_*_migration.py
+test_*.py
+debug_*.py
