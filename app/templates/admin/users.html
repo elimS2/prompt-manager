@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Users</h1>
+    <div class="btn-group" role="group">
+      <a class="btn btn-outline-secondary {% if current_status=='pending' %}active{% endif %}"
+         href="{{ url_for('admin.users_index', status='pending') }}">Pending</a>
+      <a class="btn btn-outline-secondary {% if current_status=='active' %}active{% endif %}"
+         href="{{ url_for('admin.users_index', status='active') }}">Active</a>
+      <a class="btn btn-outline-secondary {% if current_status=='disabled' %}active{% endif %}"
+         href="{{ url_for('admin.users_index', status='disabled') }}">Disabled</a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col" class="text-uppercase small text-muted">ID</th>
+          <th scope="col" class="text-uppercase small text-muted">Email</th>
+          <th scope="col" class="text-uppercase small text-muted">Name</th>
+          <th scope="col" class="text-uppercase small text-muted">Role</th>
+          <th scope="col" class="text-uppercase small text-muted">Status</th>
+          <th scope="col" class="text-uppercase small text-muted">Last login</th>
+          <th scope="col" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr class="align-middle">
+          <td class="fw-semibold">{{ u.id }}</td>
+          <td class="fw-semibold">{{ u.email }}</td>
+          <td class="text-secondary">{{ u.name or '-' }}</td>
+          <td>
+            <span class="badge bg-secondary">{{ u.role }}</span>
+          </td>
+          <td>
+            {% if u.status == 'pending' %}
+              <span class="badge bg-warning text-dark">pending</span>
+            {% elif u.status == 'active' %}
+              <span class="badge bg-success">active</span>
+            {% else %}
+              <span class="badge bg-danger">disabled</span>
+            {% endif %}
+          </td>
+          <td class="text-secondary">{{ u.last_login_at or '-' }}</td>
+          <td class="text-end">
+            {% if current_status == 'pending' %}
+              <form method="post" action="{{ url_for('admin.users_approve', user_id=u.id) }}" class="d-inline">
+                <select name="role" class="form-select form-select-sm d-inline-block w-auto me-2">
+                  <option value="">keep</option>
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+              </form>
+            {% elif current_status == 'active' %}
+              <form method="post" action="{{ url_for('admin.users_disable', user_id=u.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Disable</button>
+              </form>
+            {% else %}
+              <span class="text-muted">No actions</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+

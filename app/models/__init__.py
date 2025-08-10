@@ -5,5 +5,6 @@ from .prompt import Prompt, prompt_tags
 from .tag import Tag
 from .attached_prompt import AttachedPrompt
 from .user import User
+from .allowlist import EmailAllowlist
 
-__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags', 'AttachedPrompt', 'User']
+__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags', 'AttachedPrompt', 'User', 'EmailAllowlist']

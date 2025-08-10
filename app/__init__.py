@@ -122,10 +122,12 @@ def create_app(config_name='development'):
     from app.controllers.prompt_controller import prompt_bp, register_filters
     from app.controllers.api_controller import api_bp
     from app.controllers.auth_controller import auth_bp
+    from app.controllers.admin_controller import admin_bp
     
     app.register_blueprint(prompt_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
     
     # Register template filters
     register_filters(app)

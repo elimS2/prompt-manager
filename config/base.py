@@ -26,6 +26,16 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     
+    # Access control / Admins
+    # ACCESS_POLICY defines how access is granted to new users after Google OAuth.
+    # - allowlist_then_approval (default): Non-allowlisted users become pending until approved by admin.
+    # - allowlist_strict: Only allowlisted or admin emails may access; others remain pending and cannot proceed.
+    ACCESS_POLICY = os.getenv("ACCESS_POLICY", "allowlist_then_approval")
+
+    # ADMINS is a comma-separated list of admin emails; they will be granted admin role upon first login.
+    _ADMINS_ENV = os.getenv("ADMINS", "")
+    ADMINS = [email.strip().lower() for email in _ADMINS_ENV.split(",") if email.strip()]
+
     # Pagination
     ITEMS_PER_PAGE = int(os.getenv("ITEMS_PER_PAGE", 20))
     

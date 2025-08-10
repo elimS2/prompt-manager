@@ -210,6 +210,29 @@ Google OAuth 2.0 is supported for the web app (Flask-Login sessions). API write 
    ```
 5. Run the app and click "Sign in with Google".
 
+#### Access Control (Allowlist & Admin)
+
+Add these environment variables in `.env` to control access:
+
+```env
+# Access control policy
+# - allowlist_then_approval: Non-allowlisted users are marked pending and await admin approval
+# - allowlist_strict: Only allowlisted or admin emails can access; others remain pending
+ACCESS_POLICY=allowlist_then_approval
+
+# Comma-separated admin emails (granted admin role on first login)
+ADMINS=your-admin@example.com
+```
+
+Admin interface:
+- Users: `http://localhost:5001/admin/users` (filters: Pending/Active/Disabled; Approve/Disable actions)
+- Allowlist: `http://localhost:5001/admin/allowlist` (add/remove emails)
+
+Behavior:
+- Non-allowlisted users see `/access/pending` after OAuth until approved.
+- Approved users stay `active` (won't be downgraded to `pending` on subsequent logins).
+- Disabled users remain blocked.
+
 Troubleshooting:
 - If you see `mismatching_state`, ensure you use a single host (localhost or 127.0.0.1) and that cookies are allowed.
 - If you see `no such table: users`, verify the active DB URI at startup logs and run migrations against that DB. Use `scripts/db_introspect.py` to inspect tables and alembic version.

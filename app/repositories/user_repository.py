@@ -19,4 +19,21 @@ class UserRepository(BaseRepository[User]):
             return None
         return self.model.query.filter_by(google_sub=google_sub).first()
 
+    def list_by_status(self, status: str):
+        return self.model.query.filter_by(status=status).order_by(self.model.created_at.asc()).all()
+
+    def mark_approved(self, user: User, approver_user_id: int | None = None, role: str | None = None):
+        if role:
+            user.role = role
+        user.status = 'active'
+        user.approved_by_user_id = approver_user_id
+        user.approved_at = __import__('datetime').datetime.utcnow()
+        self.session.commit()
+        return user
+
+    def mark_disabled(self, user: User):
+        user.status = 'disabled'
+        self.session.commit()
+        return user
+
 

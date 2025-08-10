@@ -1,5 +1,5 @@
 """Authentication controller: Google OAuth login, callback, logout."""
-from flask import Blueprint, redirect, url_for, request, session, current_app, flash
+from flask import Blueprint, redirect, url_for, request, session, current_app, flash, render_template
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from app.models import User
@@ -44,10 +44,10 @@ def callback():
     except Exception as exc:
         current_app.logger.warning('OAuth callback state/token error: %s', exc)
         flash('Login session expired. Please try again.', 'warning')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.pending'))
     if not token:
         flash('Authorization failed', 'error')
-        return redirect(url_for('prompt.index'))
+        return redirect(url_for('auth.pending'))
 
     current_app.logger.info('OAuth callback: token received successfully.')
     userinfo = oauth.google.userinfo()
@@ -62,7 +62,19 @@ def callback():
     except Exception as exc:
         current_app.logger.exception('OAuth callback processing failed: %s', exc)
         flash('Failed to sign in with Google', 'error')
-        return redirect(url_for('prompt.index'))
+        return redirect(url_for('auth.pending'))
+    # Enforce access status
+    if user.status == 'pending':
+        current_app.logger.info('User pending approval. user_id=%s', getattr(user, 'id', None))
+        flash('Access not granted yet. Please wait for administrator approval.', 'warning')
+        # Store last attempted email in session to show on pending page (no logging)
+        session['last_pending_email'] = user.email
+        return redirect(url_for('auth.pending'))
+    if user.status == 'disabled':
+        current_app.logger.info('User is disabled. user_id=%s', getattr(user, 'id', None))
+        flash('Your account is disabled. Contact administrator.', 'error')
+        session['last_pending_email'] = user.email
+        return redirect(url_for('auth.pending'))
 
     login_user(user)
     current_app.logger.info('User logged in. user_id=%s', getattr(user, 'id', None))
@@ -78,4 +90,10 @@ def logout():
     flash('Signed out', 'info')
     return redirect(url_for('prompt.index'))
 
+
+@auth_bp.route('/access/pending')
+def pending():
+    """Show pending/disabled access page."""
+    # Keep it minimal; show a neutral message and last attempted email if present
+    return render_template('access/pending.html', last_email=session.get('last_pending_email'))
 

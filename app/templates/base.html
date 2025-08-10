@@ -71,6 +71,17 @@
                     <li class="nav-item">
                         <a class="nav-link theme-transition" href="{{ url_for('prompt.tags') }}">Tags</a>
                     </li>
+                    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle theme-transition" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Admin
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('admin.users_index', status='pending') }}">Users</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.allowlist_index') }}">Allowlist</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
                 <form class="d-flex me-3 ms-auto" action="{{ url_for('prompt.search') }}" method="get">
                     <input class="form-control me-2 theme-transition" type="search" name="q" placeholder="Search prompts..." 

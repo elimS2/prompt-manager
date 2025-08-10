@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Access Pending{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h4 mb-3">Access not granted</h1>
+          <p class="mb-3">Your account does not have access to this application yet. Please wait for administrator approval.</p>
+          {% if last_email %}
+            <p class="text-muted mb-4">Requested email: <strong>{{ last_email }}</strong></p>
+          {% endif %}
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('prompt.index') }}" class="btn btn-outline-secondary">Go to Home</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">Sign out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
