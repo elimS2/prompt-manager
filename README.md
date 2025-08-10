@@ -188,7 +188,31 @@ The project follows a **clean architecture** pattern with clear separation of co
 ## 🔌 API Documentation
 
 ### Authentication
-Currently, the API is open. Authentication will be added in future versions.
+Google OAuth 2.0 is supported for the web app (Flask-Login sessions). API write endpoints are protected.
+
+#### Google OAuth Setup (Development)
+1. Create OAuth consent screen in Google Cloud Console (External, Testing).
+2. Create OAuth Client ID (Web application):
+   - Authorized redirect URIs:
+     - `http://localhost:5001/auth/callback`
+     - `http://127.0.0.1:5001/auth/callback`
+3. Set environment variables in `.env`:
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   OAUTH_GOOGLE_REDIRECT_URI=http://localhost:5001/auth/callback
+   # Recommended: use instance DB with absolute path
+   DATABASE_URL=sqlite:///C:/path/to/project/instance/prompt_manager.db
+   ```
+4. Apply migrations to the active DB:
+   ```powershell
+   venv\Scripts\python -m flask db upgrade
+   ```
+5. Run the app and click "Sign in with Google".
+
+Troubleshooting:
+- If you see `mismatching_state`, ensure you use a single host (localhost or 127.0.0.1) and that cookies are allowed.
+- If you see `no such table: users`, verify the active DB URI at startup logs and run migrations against that DB. Use `scripts/db_introspect.py` to inspect tables and alembic version.
 
 ### Endpoints
 

@@ -3,6 +3,7 @@ RESTful API controller for prompt management.
 Provides JSON API endpoints following REST conventions.
 """
 from flask import Blueprint, jsonify, request
+from flask_login import login_required
 from app.services import PromptService, TagService, MergeService, CursorService, AttachedPromptService
 from app.controllers.base import BaseController
 from functools import wraps
@@ -87,6 +88,7 @@ def get_prompt(id):
 
 
 @api_bp.route('/prompts', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['title', 'content'])
 @BaseController.handle_service_error
@@ -115,6 +117,7 @@ def create_prompt():
 
 
 @api_bp.route('/prompts/<int:id>', methods=['PUT'])
+@login_required
 @require_json
 @BaseController.handle_service_error
 def update_prompt(id):
@@ -140,6 +143,7 @@ def update_prompt(id):
 
 
 @api_bp.route('/prompts/<int:id>', methods=['DELETE'])
+@login_required
 def delete_prompt(id):
     """
     Delete a prompt.
@@ -158,6 +162,7 @@ def delete_prompt(id):
 
 
 @api_bp.route('/prompts/<int:id>/restore', methods=['POST'])
+@login_required
 def restore_prompt(id):
     """Restore a soft-deleted prompt."""
     success = prompt_service.restore_prompt(id)
@@ -169,6 +174,7 @@ def restore_prompt(id):
 
 
 @api_bp.route('/prompts/<int:id>/duplicate', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def duplicate_prompt(id):
     """
@@ -189,6 +195,7 @@ def duplicate_prompt(id):
 
 
 @api_bp.route('/prompts/merge', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['prompt_ids'])
 @BaseController.handle_service_error
@@ -304,6 +311,7 @@ def get_tag(id):
 
 
 @api_bp.route('/tags', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['name'])
 @BaseController.handle_service_error
@@ -328,6 +336,7 @@ def create_tag():
 
 
 @api_bp.route('/tags/<int:id>', methods=['PUT'])
+@login_required
 @require_json
 @BaseController.handle_service_error
 def update_tag(id):
@@ -349,6 +358,7 @@ def update_tag(id):
 
 
 @api_bp.route('/tags/<int:id>', methods=['DELETE'])
+@login_required
 def delete_tag(id):
     """
     Delete a tag.
@@ -370,6 +380,7 @@ def delete_tag(id):
 
 
 @api_bp.route('/tags/merge', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['source_id', 'target_id'])
 @BaseController.handle_service_error
@@ -434,6 +445,7 @@ def cursor_status():
 
 
 @api_bp.route('/cursor/send', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['content'])
 @BaseController.handle_service_error
@@ -462,6 +474,7 @@ def send_to_cursor():
 
 
 @api_bp.route('/cursor/send/<int:prompt_id>', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def send_prompt_to_cursor(prompt_id):
     """
@@ -512,6 +525,7 @@ def get_attached_prompts(prompt_id):
 
 
 @api_bp.route('/prompts/<int:prompt_id>/attach', methods=['POST'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['attached_prompt_id'])
 @BaseController.handle_service_error
@@ -557,6 +571,7 @@ def attach_prompt(prompt_id):
 
 
 @api_bp.route('/prompts/<int:prompt_id>/attach/<int:attached_id>', methods=['DELETE'])
+@login_required
 @BaseController.handle_service_error
 def detach_prompt(prompt_id, attached_id):
     """
@@ -586,6 +601,7 @@ def detach_prompt(prompt_id, attached_id):
 
 
 @api_bp.route('/prompts/<int:prompt_id>/attached/reorder', methods=['PUT'])
+@login_required
 @require_json
 @BaseController.validate_request_data(['order_data'])
 @BaseController.handle_service_error
@@ -796,6 +812,7 @@ def get_attachment_statistics():
 
 
 @api_bp.route('/prompts/<int:main_id>/attach/<int:attached_id>/use', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def increment_attachment_usage(main_id, attached_id):
     """

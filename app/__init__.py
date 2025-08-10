@@ -4,6 +4,7 @@ Prompt Manager Application
 A Flask-based prompt management system following SOLID principles and clean architecture.
 """
 import time
+import re
 import uuid
 from flask import Flask, g, request
 from flask_migrate import Migrate
@@ -43,9 +44,43 @@ def create_app(config_name='development'):
         app.config.from_object(BaseConfig)
         BaseConfig.init_app(app)
     
+    # Log active database URI (sanitized; password redacted)
+    def _sanitize_db_uri(uri: str) -> str:
+        if not uri:
+            return "<undefined>"
+        try:
+            # redact password part user:password@
+            return re.sub(r'(://[^:/@]+:)[^@]*(@)', r'\1***\2', uri)
+        except Exception:
+            return uri
+
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+    app.logger.info("Using database URI (sanitized): %s", _sanitize_db_uri(db_uri))
+    # For SQLite, also log the resolved absolute filesystem path for clarity
+    try:
+        if isinstance(db_uri, str) and db_uri.startswith('sqlite:///'):
+            sqlite_path = db_uri.replace('sqlite:///', '', 1)
+            import os
+            resolved = os.path.abspath(sqlite_path)
+            app.logger.info("SQLite file (resolved absolute path): %s", resolved)
+    except Exception:
+        pass
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    
+    # Initialize Flask-Login
+    from app.controllers.auth_controller import login_manager
+    login_manager.login_view = 'auth.login'
+    login_manager.init_app(app)
+
+    # Expose current_user in templates
+    from flask_login import current_user
+
+    @app.context_processor
+    def inject_current_user():
+        return {"current_user": current_user}
     
     # Configure logging
     from app.utils.logging import setup_logging, log_request
@@ -86,9 +121,11 @@ def create_app(config_name='development'):
     # Register blueprints
     from app.controllers.prompt_controller import prompt_bp, register_filters
     from app.controllers.api_controller import api_bp
+    from app.controllers.auth_controller import auth_bp
     
     app.register_blueprint(prompt_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(auth_bp)
     
     # Register template filters
     register_filters(app)

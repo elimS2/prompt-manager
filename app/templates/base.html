@@ -72,7 +72,7 @@
                         <a class="nav-link theme-transition" href="{{ url_for('prompt.tags') }}">Tags</a>
                     </li>
                 </ul>
-                <form class="d-flex me-3" action="{{ url_for('prompt.search') }}" method="get">
+                <form class="d-flex me-3 ms-auto" action="{{ url_for('prompt.search') }}" method="get">
                     <input class="form-control me-2 theme-transition" type="search" name="q" placeholder="Search prompts..." 
                            value="{{ request.args.get('q', '') }}">
                     <button class="btn btn-outline-light theme-transition" type="submit">Search</button>
@@ -83,6 +83,33 @@
                     <i class="bi bi-sun-fill icon icon-sun" aria-hidden="true"></i>
                     <i class="bi bi-moon-fill icon icon-moon" aria-hidden="true"></i>
                 </button>
+
+                <!-- Auth Controls -->
+                <div class="ms-3 d-flex align-items-center">
+                    {% if current_user.is_authenticated %}
+                        <div class="dropdown">
+                            <a class="d-flex align-items-center text-decoration-none text-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if current_user.picture_url %}
+                                    <img src="{{ current_user.picture_url }}" alt="{{ current_user.name or current_user.email }}"
+                                         class="rounded-circle me-2" width="32" height="32">
+                                {% else %}
+                                    <i class="bi bi-person-circle me-2 fs-4" aria-hidden="true"></i>
+                                {% endif %}
+                                <span class="d-none d-sm-inline">{{ current_user.name or current_user.email }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><span class="dropdown-item-text small text-muted">{{ current_user.email }}</span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Sign out</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a class="btn btn-outline-light theme-transition" href="{{ url_for('auth.login', next=request.full_path) }}" data-google-login>
+                            <i class="bi bi-google me-1" aria-hidden="true"></i>
+                            Sign in with Google
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>

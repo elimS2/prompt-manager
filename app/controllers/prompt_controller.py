@@ -3,6 +3,7 @@ Web controller for prompt management.
 Handles HTTP requests for the web interface.
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask_login import login_required
 from app.services import PromptService, TagService, MergeService
 from app.controllers.base import BaseController
 from app.utils.tag_utils import parse_tag_string, format_tags_for_display
@@ -41,6 +42,7 @@ def register_filters(app):
 
 @prompt_bp.route('/')
 @prompt_bp.route('/prompts')
+@login_required
 def index():
     """Display list of prompts with filtering and pagination."""
     
@@ -87,6 +89,7 @@ def index():
 
 
 @prompt_bp.route('/prompts/create', methods=['GET', 'POST'])
+@login_required
 @BaseController.handle_service_error
 def create():
     """Create a new prompt."""
@@ -135,6 +138,7 @@ def create():
 
 
 @prompt_bp.route('/prompts/<int:id>')
+@login_required
 def view(id):
     """View a single prompt."""
     prompt = prompt_service.get_prompt(id)
@@ -152,6 +156,7 @@ def view(id):
 
 
 @prompt_bp.route('/prompts/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
 @BaseController.handle_service_error
 def edit(id):
     """Edit an existing prompt."""
@@ -200,6 +205,7 @@ def edit(id):
 
 
 @prompt_bp.route('/prompts/<int:id>/delete', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def delete(id):
     """Delete a prompt (soft delete)."""
@@ -214,6 +220,7 @@ def delete(id):
 
 
 @prompt_bp.route('/prompts/<int:id>/restore', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def restore(id):
     """Restore a deleted prompt."""
@@ -228,6 +235,7 @@ def restore(id):
 
 
 @prompt_bp.route('/prompts/<int:id>/archive', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def archive(id):
     """Archive a prompt (set as inactive)."""
@@ -242,6 +250,7 @@ def archive(id):
 
 
 @prompt_bp.route('/prompts/<int:id>/duplicate', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def duplicate(id):
     """Duplicate a prompt."""
@@ -257,6 +266,7 @@ def duplicate(id):
 
 
 @prompt_bp.route('/prompts/reorder', methods=['POST'])
+@login_required
 @BaseController.handle_service_error
 def reorder():
     """Update the order of prompts after drag and drop."""
@@ -291,6 +301,7 @@ def reorder():
 
 
 @prompt_bp.route('/prompts/merge', methods=['GET', 'POST'])
+@login_required
 @BaseController.handle_service_error
 def merge():
     """Merge multiple prompts."""
@@ -354,6 +365,7 @@ def merge():
 
 
 @prompt_bp.route('/prompts/search')
+@login_required
 def search():
     """Search prompts."""
     query = request.args.get('q', '').strip()
@@ -371,6 +383,7 @@ def search():
 
 
 @prompt_bp.route('/tags')
+@login_required
 def tags():
     """Display tag cloud and statistics."""
     # Get tag cloud

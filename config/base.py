@@ -32,6 +32,12 @@ class BaseConfig:
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE = os.getenv("LOG_FILE", "app.log")
+
+    # OAuth (Google)
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+    OAUTH_GOOGLE_REDIRECT_URI = os.getenv("OAUTH_GOOGLE_REDIRECT_URI")
+    OAUTH_GOOGLE_ALLOWED_HD = os.getenv("OAUTH_GOOGLE_ALLOWED_HD")
     
     @staticmethod
     def init_app(app):

@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-hide alerts
     autoHideAlerts();
+
+    // Initialize auth controls
+    initializeAuthControls();
 });
 
 // Initialize Bootstrap tooltips
@@ -190,3 +193,24 @@ window.showToast = showToast;
 window.confirmAction = confirmAction;
 window.setLoading = setLoading;
 window.debounce = debounce;
+
+// Initialize auth controls (Google login loading feedback)
+function initializeAuthControls() {
+    const loginLinks = document.querySelectorAll('[data-google-login]');
+    loginLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            if (link.classList.contains('disabled')) {
+                return;
+            }
+            e.preventDefault();
+            link.classList.add('disabled');
+            link.setAttribute('aria-disabled', 'true');
+            link.setAttribute('aria-busy', 'true');
+            setLoading(link, true);
+            // Allow the spinner to render before navigating
+            setTimeout(() => {
+                window.location.href = link.getAttribute('href');
+            }, 75);
+        });
+    });
+}
