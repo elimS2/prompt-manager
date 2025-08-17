@@ -62,9 +62,12 @@
                     <div class="popular-tags-container">
                         {% for item in popular_tags %}
                             <a href="#" 
-                               class="tag tag-filter theme-transition" 
+                               class="tag tag-filter theme-transition {% if filters.tags and item.tag.name in filters.tags %}selected{% endif %}"
                                data-tag="{{ item.tag.name }}"
-                               style="background-color: {{ item.tag.color }}">
+                               style="background-color: {{ item.tag.color }}"
+                               role="button"
+                               tabindex="0"
+                               aria-pressed="{{ 'true' if filters.tags and item.tag.name in filters.tags else 'false' }}">
                                 {{ item.tag.name }} ({{ item.usage_count }})
                             </a>
                         {% endfor %}

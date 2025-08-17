@@ -6,6 +6,8 @@
 **Goal**: Show only relevant tags for the current status filter to improve UX and performance
 **Current Problem**: All tags are shown regardless of status, leading to poor UX when users click on tags that return no results
 
+> See also: Popular Tags selected-state and toggling behavior documented in `docs/features/popular-tags-selected-state.md`.
+
 ## Current State Analysis
 
 ### What Works Now
@@ -20,7 +22,7 @@
 - ❌ Poor UX - clicking on irrelevant tags leads to empty results
 - ❌ No visual indication of tag relevance to current status
 
-### Current Implementation Details
+## Current Implementation Details
 - `TagRepository.get_popular_tags()` returns all tags with usage counts
 - `TagService.get_popular_tags()` calls repository without status filtering
 - Controller passes static popular tags to template
@@ -246,35 +248,6 @@ class PromptListManager {
 }
 ```
 
-#### 2.3 Update Template Structure
-**Status**: ✅ COMPLETED
-**File**: `app/templates/prompt/list.html`
-**Task**: Add container for dynamic tag updates
-
-**Requirements**:
-- Add container class for popular tags
-- Ensure proper structure for JavaScript updates
-- Maintain existing styling and functionality
-- Add fallback for JavaScript disabled
-
-**Implementation Details**:
-```html
-<!-- Popular Tags -->
-<div class="mb-3">
-    <label class="form-label theme-text">Popular Tags</label>
-    <div class="popular-tags-container">
-        {% for item in popular_tags %}
-            <a href="#" 
-               class="tag tag-filter theme-transition" 
-               data-tag="{{ item.tag.name }}"
-               style="background-color: {{ item.tag.color }}">
-                {{ item.tag.name }} ({{ item.usage_count }})
-            </a>
-        {% endfor %}
-    </div>
-</div>
-```
-
 ### Phase 3: UX Enhancements (Priority: Medium)
 
 #### 3.1 Add Smooth Transitions
@@ -288,61 +261,15 @@ class PromptListManager {
 - Error state styling
 - Maintain theme consistency
 
-**Implementation Details**:
-```css
-.popular-tags-container {
-    min-height: 60px; /* Prevent layout shift */
-    transition: opacity 0.3s ease;
-}
-
-.popular-tags-container.loading {
-    opacity: 0.6;
-}
-
-.tag-filter {
-    transition: all 0.2s ease;
-}
-
-.tag-filter:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.tag-loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-```
-
 #### 3.2 Add Tag Count Indicators
 **Status**: ✅ COMPLETED
 **Task**: Show count of prompts for each tag in current status
-
-**Requirements**:
-- Display count next to tag name
-- Update counts when status changes
-- Handle zero counts gracefully
-- Maintain existing styling
 
 #### 3.3 Add Keyboard Navigation
 **Status**: ✅ COMPLETED
 **Task**: Allow keyboard navigation through tags
 
-**Requirements**:
-- Tab navigation through tags
-- Enter/Space to select tag
-- Escape to clear selection
-- Maintain accessibility standards
+> Note: Selected-state design and keyboard a11y are detailed in `docs/features/popular-tags-selected-state.md`.
 
 ### Phase 4: Performance Optimizations (Priority: Low)
 

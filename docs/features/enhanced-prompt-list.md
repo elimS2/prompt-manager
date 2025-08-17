@@ -4,6 +4,8 @@
 
 The prompt list page has been enhanced to provide a better user experience with inline content preview and quick copy functionality. Users can now view and copy prompt content directly from the list without navigating to individual prompt pages.
 
+> Related: Popular Tags selected state and toggling behavior is documented in `docs/features/popular-tags-selected-state.md`.
+
 ## Key Features
 
 ### 1. Inline Content Preview

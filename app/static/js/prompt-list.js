@@ -65,6 +65,7 @@ class PromptListManager {
         this.initPanelToggleButton();
         this.restorePanelVisibility();
         this.initTagFilters();
+        this.syncSelectedTagVisualsWithURL();
         this.initStatusFilterListener();
         this.initDragAndDrop();
         this.initAttachedPrompts();
@@ -1171,15 +1172,20 @@ class PromptListManager {
         const tagName = tagElement.getAttribute('data-tag');
         
         // Get current URL and parameters
-        const url = new URL(window.location);
-        
-        // Add or update the tags parameter
-        const currentTags = url.searchParams.getAll('tags');
-        if (!currentTags.includes(tagName)) {
-            url.searchParams.append('tags', tagName);
+        const url = new URL(window.location.href);
+        const params = url.searchParams;
+
+        // Toggle tag in the query params (add if missing, remove if present)
+        const currentTags = params.getAll('tags');
+        if (currentTags.includes(tagName)) {
+            const remaining = currentTags.filter(t => t !== tagName);
+            params.delete('tags');
+            [...new Set(remaining)].forEach(t => params.append('tags', t));
+        } else {
+            params.append('tags', tagName);
         }
-        
-        // Navigate to the new URL with preserved parameters
+
+        // Navigate to the updated URL with preserved parameters
         window.location.href = url.toString();
     }
 
@@ -1345,19 +1351,27 @@ class PromptListManager {
             return;
         }
         
+        // Determine currently selected tags from URL
+        const url = new URL(window.location.href);
+        const selectedTags = url.searchParams.getAll('tags');
+
         this.tagFiltersContainer.innerHTML = tags.map(tag => {
             const countClass = this.getCountClass(tag.usage_count);
             const countText = this.formatCount(tag.usage_count);
+            const isSelected = selectedTags.includes(tag.name);
+            const selectedClass = isSelected ? ' selected' : '';
+            const ariaPressed = isSelected ? 'true' : 'false';
             
             return `
                 <a href="#" 
-                   class="tag tag-filter theme-transition" 
+                   class="tag tag-filter theme-transition${selectedClass}" 
                    data-tag="${tag.name}"
                    style="background-color: ${tag.color}"
                    title="${tag.name} - ${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''}"
                    tabindex="0"
                    role="button"
-                   aria-label="Filter by tag: ${tag.name} (${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''})">
+                   aria-label="Filter by tag: ${tag.name} (${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''})"
+                   aria-pressed="${ariaPressed}">
                     <span class="tag-name">${tag.name}</span>
                     <span class="tag-count ${countClass}" aria-label="${tag.usage_count} prompt${tag.usage_count !== 1 ? 's' : ''}">${countText}</span>
                 </a>
@@ -1366,6 +1380,25 @@ class PromptListManager {
         
         // Reinitialize tag click handlers
         this.initTagFilters();
+    }
+
+    /**
+     * Sync selected state of Popular Tags with URL parameters (defensive enhancement for SSR mismatches)
+     */
+    syncSelectedTagVisualsWithURL() {
+        try {
+            const url = new URL(window.location.href);
+            const selectedTags = new Set(url.searchParams.getAll('tags'));
+            const tagFilters = document.querySelectorAll('.tag-filter');
+            tagFilters.forEach(tagEl => {
+                const name = tagEl.getAttribute('data-tag');
+                const isSelected = selectedTags.has(name);
+                tagEl.classList.toggle('selected', isSelected);
+                tagEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+        } catch (e) {
+            console.warn('Failed to sync tag visuals with URL:', e);
+        }
     }
     
     /**

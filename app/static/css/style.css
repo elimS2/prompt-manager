@@ -50,6 +50,11 @@ html[data-theme] {
     --text-secondary: #6B7280;
     --text-muted: #9CA3AF;
     --text-inverse: #FFFFFF;
+
+    /* Tag Selected (Teal/Turquoise) */
+    --tag-selected-bg: #14B8A6; /* teal-500 */
+    --tag-selected-hover: #0D9488; /* teal-600 */
+    --tag-selected-contrast: #FFFFFF;
     
     /* Border Colors */
     --border-color: #E5E7EB;
@@ -107,6 +112,11 @@ html[data-theme] {
     --text-secondary: #E2E8F0; /* Brighter secondary text */
     --text-muted: #94A3B8; /* Softer muted text */
     --text-inverse: #0F172A; /* Dark text for light backgrounds */
+
+    /* Tag Selected (Teal/Turquoise) for dark theme */
+    --tag-selected-bg: #2DD4BF; /* teal-400 */
+    --tag-selected-hover: #14B8A6; /* teal-500 */
+    --tag-selected-contrast: #0F172A;
     
     /* Border Colors - More visible */
     --border-color: #475569; /* More visible borders */
@@ -2061,6 +2071,49 @@ pre {
     transition: all 0.2s ease;
     display: inline-block;
     margin: 0.125rem;
+}
+
+.popular-tags-container .tag-filter.selected {
+    outline: none;
+    border: none;
+    box-shadow: none;
+    background-color: var(--tag-selected-bg) !important;
+    color: var(--tag-selected-contrast) !important;
+    transform: translateY(-1px) scale(1.02);
+}
+
+[data-theme="dark"] .popular-tags-container .tag-filter.selected {
+    outline: none;
+    border: none;
+    box-shadow: none;
+    background-color: var(--tag-selected-bg) !important;
+    color: var(--tag-selected-contrast) !important;
+}
+
+/* Add a small check indicator for selected tags (non-intrusive) */
+.popular-tags-container .tag-filter.selected::after {
+    content: "\2713"; /* check mark */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.4rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: var(--tag-selected-contrast);
+    font-size: 0.75rem;
+}
+
+[data-theme="dark"] .popular-tags-container .tag-filter.selected::after {
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--tag-selected-contrast);
+}
+
+/* Selected tag count contrast adjustments */
+.popular-tags-container .tag-filter.selected .tag-count {
+    background-color: rgba(255, 255, 255, 0.35);
+    color: var(--tag-selected-contrast);
 }
 
 .popular-tags-container .tag-filter:hover {

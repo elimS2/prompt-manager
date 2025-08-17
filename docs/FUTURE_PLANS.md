@@ -28,6 +28,15 @@ This document outlines future development plans, improvements, and potential fea
 
 ## 🔧 Medium Priority
 
+### Popular Tags – Selected State (Follow‑ups)
+Short list; see details in `docs/features/popular-tags-selected-state.md`.
+- [ ] Tag name case policy and implementation: treat comparisons in UI as case‑insensitive; write canonical backend casing to URL (decision + implementation).
+- [ ] Optional UI: compact "Selected Tags" chips row with per‑chip remove.
+- [ ] Optional UX: quick "Clear selected tags" action near Popular Tags section.
+- [ ] Optional state persistence: remember selected tags in session storage for back/forward navigation.
+- [ ] Optional theming: expose `--tag-selected-*` tokens to theme settings page (if/when it exists).
+- [ ] Performance (related): cache popular tags by status; see `docs/features/contextual-tag-filtering.md` for plan.
+
 ### Integration & API
 - [ ] Develop REST API for external integrations
 - [ ] Add webhook support for real-time updates
