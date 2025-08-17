@@ -333,6 +333,8 @@ class PromptListManager {
             const modalEl = document.getElementById('saveFavoriteModal');
             if (!modalEl) return;
             this.saveFavoriteModal = new bootstrap.Modal(modalEl);
+            // Ensure modal element is on body level for proper stacking
+            try { if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl); } catch (_) {}
             this.favoriteNameInput = document.getElementById('favoriteNameInput');
             this.favoriteSelectionInfo = document.getElementById('favoriteSelectionInfo');
             this.confirmSaveFavoriteBtn = document.getElementById('confirmSaveFavoriteBtn');
@@ -356,10 +358,17 @@ class PromptListManager {
 
     openSaveFavoriteModal() {
         this.initSaveFavoriteModal();
+        // Defensive: ensure no global loading overlays block interactions
+        try {
+            document.documentElement.classList.remove('theme-loading');
+            document.body.classList.remove('loading');
+        } catch (_) { /* ignore */ }
         if (this.favoriteNameInput) {
             const defaultName = `Favorite (${this.selectedPrompts.size})`;
             this.favoriteNameInput.value = defaultName;
             this.confirmSaveFavoriteBtn.disabled = false;
+            // Focus input for immediate typing
+            try { this.favoriteNameInput.focus(); } catch (_) { /* ignore */ }
         }
         if (this.saveFavoriteModal) this.saveFavoriteModal.show();
     }
@@ -533,7 +542,8 @@ class PromptListManager {
         if (this.selectedPrompts.size === 0) return;
         const name = (this.favoriteNameInput?.value || '').trim();
         if (!name) return;
-        const promptIds = this.getSelectedPromptIdsInDomOrder();
+        // Save in the user's selection order (insertion order of the Set)
+        const promptIds = Array.from(this.selectedPrompts).map(id => parseInt(id));
         try {
             const res = await fetch('/api/favorites', {
                 method: 'POST',
@@ -569,14 +579,28 @@ class PromptListManager {
         }
         // Temporarily suppress pair auto-copy while applying many selections
         this.suppressCombinationCopy = true;
+        const visibleIdsInFavoriteOrder = [];
         (favorite.items || []).forEach(item => {
             const cb = document.getElementById(`prompt-${item.prompt_id}`);
-            if (cb) { cb.checked = true; this.handleCheckboxChange(cb); }
+            if (cb) {
+                cb.checked = true;
+                this.handleCheckboxChange(cb);
+                visibleIdsInFavoriteOrder.push(parseInt(item.prompt_id));
+            }
         });
         this.suppressCombinationCopy = false;
+        // Normalize internal selection order according to Favorite ordering
+        if (merge) {
+            const existing = Array.from(this.selectedPrompts).map(id => parseInt(id));
+            const appended = visibleIdsInFavoriteOrder.filter(id => !existing.includes(id));
+            this.selectedPrompts = new Set([...existing, ...appended]);
+        } else {
+            this.selectedPrompts = new Set(visibleIdsInFavoriteOrder);
+        }
+        this.updateUI();
         // Missing due to filters?
         const total = (favorite.items || []).length;
-        const visible = (favorite.items || []).filter(it => document.getElementById(`prompt-${it.prompt_id}`)).length;
+        const visible = visibleIdsInFavoriteOrder.length;
         if (visible < total) {
             this.showToast(`Applied favorite "${favorite.name}" (${visible}/${total}). Some prompts are hidden by filters.`, 'warning');
         } else {

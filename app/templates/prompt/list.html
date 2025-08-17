@@ -92,7 +92,7 @@
         {% endif %}
 
         <!-- Save Favorite Modal -->
-        <div class="modal fade" id="saveFavoriteModal" tabindex="-1" aria-labelledby="saveFavoriteModalLabel" aria-hidden="true">
+        <div class="modal fade" id="saveFavoriteModal" tabindex="-1" aria-labelledby="saveFavoriteModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
             <div class="modal-dialog">
                 <div class="modal-content theme-surface theme-border">
                     <div class="modal-header">
@@ -106,6 +106,7 @@
                             <div class="form-text">Up to 150 characters. Must be unique per user.</div>
                         </div>
                         <div class="mb-2 small text-muted" id="favoriteSelectionInfo"></div>
+                        <div class="mb-2 small text-muted">Saved order equals the order you selected (not the screen order).</div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -140,9 +141,10 @@
                             <li class="px-3 py-2">
                                 <div class="form-check form-switch m-0">
                                     <input class="form-check-input" type="checkbox" id="mergeFavoriteToggle">
-                                    <label class="form-check-label small" for="mergeFavoriteToggle">Merge with current selection</label>
+                                    <label class="form-check-label small" for="mergeFavoriteToggle" title="Merge keeps current selection first, then adds favorite items in saved order.">Merge with current selection</label>
                                 </div>
                             </li>
+                            <li class="px-3 pt-0 pb-2 text-muted small">Merge keeps current selection first, then adds favorite items in saved order.</li>
                         </ul>
                     </div>
                 </div>

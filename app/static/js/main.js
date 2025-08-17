@@ -194,6 +194,19 @@ window.confirmAction = confirmAction;
 window.setLoading = setLoading;
 window.debounce = debounce;
 
+// Ensure Bootstrap modals are appended to <body> to avoid being trapped under overlays/stacking contexts
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        document.querySelectorAll('.modal').forEach(modalEl => {
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        });
+    } catch (e) {
+        // noop
+    }
+});
+
 // Initialize auth controls (Google login loading feedback)
 function initializeAuthControls() {
     const loginLinks = document.querySelectorAll('[data-google-login]');

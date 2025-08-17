@@ -927,8 +927,6 @@ a.btn {
 
 /* Theme loading state */
 .theme-loading {
-    opacity: 0.8;
-    pointer-events: none;
 }
 
 /* Enhanced theme transitions */
@@ -1452,6 +1450,20 @@ pre {
     border-radius: 0.5rem;
     border: 1px solid var(--border-color);
     box-shadow: 0 10px 15px -3px var(--shadow-color);
+}
+
+/* Ensure Save Favorite modal is always interactive above overlays */
+#saveFavoriteModal {
+    z-index: 1060;
+}
+#saveFavoriteModal .modal-dialog,
+#saveFavoriteModal .modal-content {
+    pointer-events: auto;
+}
+
+/* Cursor and preview modals should also sit above other elements */
+#cursorModal, #editModal, #previewModal, #deleteModal {
+    z-index: 1060;
 }
 
 /* Pagination */
