@@ -69,6 +69,7 @@ class PromptListManager {
         this.initCheckboxes();
         this.initToggleButtons();
         this.initCopyButtons();
+        this.initPromptCardClicks();
         this.initFilterInputs();
         this.initArchiveForms();
         this.initRestoreForms();
@@ -435,6 +436,7 @@ class PromptListManager {
         this.initCheckboxes();
         this.initToggleButtons();
         this.initCopyButtons();
+        this.initPromptCardClicks();
         this.initArchiveForms();
         this.initRestoreForms();
         this.initAttachPromptButtons();
@@ -442,6 +444,30 @@ class PromptListManager {
         this.initDragAndDrop();
         // Refresh dynamic UI state (tooltips, counts, etc.)
         this.updateUI();
+    }
+
+    /**
+     * Enable clicking anywhere on the prompt card background to toggle selection
+     */
+    initPromptCardClicks() {
+        const cards = document.querySelectorAll('.prompt-card');
+        cards.forEach(card => {
+            if (card.dataset.cardClickBound === '1') return;
+            card.addEventListener('click', (e) => {
+                // Ignore clicks originating from interactive elements inside the card
+                const isInteractive = e.target.closest('a, button, input, label, .drag-handle, .prompt-actions-group, .archive-form, .restore-form, .toggle-content-btn, .copy-content-btn, .attached-prompt-card');
+                if (isInteractive) return;
+
+                const checkbox = card.querySelector('.prompt-checkbox');
+                if (checkbox) {
+                    // Trigger native click to keep behavior consistent (change + copy handlers)
+                    checkbox.click();
+                }
+            });
+            // Visual hint that the card is clickable
+            card.addEventListener('mouseenter', () => { card.style.cursor = 'pointer'; });
+            card.dataset.cardClickBound = '1';
+        });
     }
     
     escapeHtml(text) {
