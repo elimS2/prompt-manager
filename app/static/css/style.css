@@ -1120,6 +1120,10 @@ body {
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
+    align-self: center;
+    line-height: 1;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .drag-handle:hover {
@@ -1149,7 +1153,7 @@ body {
 
 /* Ensure proper layout during drag */
 #promptsList {
-    min-height: 100px;
+    min-height: 0;
 }
 
 /* Card Enhancements */
@@ -1167,7 +1171,7 @@ body {
 
 /* Prompt Card Specific */
 .prompt-card {
-    height: 100%;
+    height: auto;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     max-width: 100%;
     border-radius: 0.75rem;
@@ -2053,7 +2057,10 @@ pre {
 }
 
 .form-check.flex-grow-1 {
-    margin: auto;
+    margin-left: 0.5rem;
+    margin-right: auto;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 /* Popular Tags Container Transitions */
