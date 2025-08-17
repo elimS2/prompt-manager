@@ -111,7 +111,7 @@ html[data-theme] {
     --text-primary: #F8FAFC; /* Brighter primary text */
     --text-secondary: #E2E8F0; /* Brighter secondary text */
     --text-muted: #94A3B8; /* Softer muted text */
-    --text-inverse: #0F172A; /* Dark text for light backgrounds */
+    --text-inverse: #FFFFFF; /* High-contrast text for colored backgrounds */
 
     /* Tag Selected (Teal/Turquoise) for dark theme */
     --tag-selected-bg: #2DD4BF; /* teal-400 */
@@ -679,6 +679,20 @@ a:hover {
 a:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+/* Ensure anchor buttons inherit proper button text color (override global anchor color) */
+a.btn {
+    color: inherit !important;
+}
+
+/* High-contrast text for filled primary buttons */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary:visited {
+    color: var(--text-inverse) !important;
 }
 
 /* Enhanced selection styling */

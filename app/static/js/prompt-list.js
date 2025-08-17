@@ -57,6 +57,15 @@ class PromptListManager {
         // Programmatic selection guard to prevent unintended pair-copy behavior
         this.suppressCombinationCopy = false;
         
+        // Clipboard operation serialization and UX guards
+        this.isClipboardWriteInProgress = false;
+        this.clipboardQueue = [];
+        this.lastSuccessfulCopyAt = 0;
+        this.clipboardErrorSuppressionMs = 500; // Suppress error toasts shortly after a success
+        
+        // Guard to prevent duplicate copy paths for a single user gesture
+        this.skipNextAutoCopy = false;
+        
         // Tag filtering functionality
         this.tagFiltersContainer = document.querySelector('.popular-tags-container');
         this.currentStatusFilter = this.getCurrentStatusFilter();
@@ -93,47 +102,91 @@ class PromptListManager {
      * Create action buttons for multi-select functionality
      */
     createActionButtons() {
-        const actionsBar = document.querySelector('.d-flex.justify-content-between.align-items-center');
-        if (actionsBar) {
-            const actionsDiv = actionsBar.querySelector('div');
-            if (actionsDiv) {
-                // Create "Copy All Selected" button
-                this.copyAllBtn = document.createElement('button');
-                this.copyAllBtn.className = 'btn btn-info me-2';
-                this.copyAllBtn.id = 'copyAllBtn';
-                this.copyAllBtn.disabled = true;
-                this.copyAllBtn.innerHTML = '<i class="bi bi-clipboard-plus me-1"></i>Copy Selected';
-                this.copyAllBtn.setAttribute('data-bs-toggle', 'tooltip');
-                this.copyAllBtn.setAttribute('title', 'Copy content of all selected prompts');
-                
-                this.copyAllBtn.addEventListener('click', () => this.copyAllSelectedPrompts());
-                
-                // Create "Clear Selection" button
-                this.clearSelectionBtn = document.createElement('button');
-                this.clearSelectionBtn.className = 'btn btn-outline-secondary me-2';
-                this.clearSelectionBtn.id = 'clearSelectionBtn';
-                this.clearSelectionBtn.disabled = true;
-                this.clearSelectionBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Clear Selection';
-                this.clearSelectionBtn.setAttribute('data-bs-toggle', 'tooltip');
-                this.clearSelectionBtn.setAttribute('title', 'Clear selection and clipboard');
-                
-                this.clearSelectionBtn.addEventListener('click', () => this.clearSelectionAndClipboard());
-                
-                // Insert buttons before the merge button
-                const mergeBtn = actionsDiv.querySelector('#mergeBtn');
-                if (mergeBtn) {
-                    actionsDiv.insertBefore(this.clearSelectionBtn, mergeBtn);
-                    actionsDiv.insertBefore(this.copyAllBtn, this.clearSelectionBtn);
-                } else {
-                    actionsDiv.appendChild(this.copyAllBtn);
-                    actionsDiv.appendChild(this.clearSelectionBtn);
-                }
-                
-                // Initialize tooltips
-                new bootstrap.Tooltip(this.copyAllBtn);
-                new bootstrap.Tooltip(this.clearSelectionBtn);
+        // Determine the correct actions bar and controls container strictly within the main content column
+        const mainColumn = document.querySelector('.col-md-9');
+        let actionsBar = null;
+        if (mainColumn) {
+            actionsBar = mainColumn.querySelector('.d-flex.justify-content-between.align-items-center.mb-4')
+                || mainColumn.querySelector('.d-flex.justify-content-between.align-items-center');
+        }
+        if (!actionsBar) {
+            // Fallback to a document-level search only as a last resort (but sidebar anchors should not match due to next steps)
+            actionsBar = document.querySelector('.col-md-9 .d-flex.justify-content-between.align-items-center.mb-4')
+                || document.querySelector('.col-md-9 .d-flex.justify-content-between.align-items-center');
+        }
+
+        // Prefer the known right-side controls container
+        let controlsContainer = actionsBar ? actionsBar.querySelector('.d-flex.align-items-center.gap-2') : null;
+        if (!controlsContainer) {
+            const mergeBtnEl = document.getElementById('mergeBtn');
+            if (mergeBtnEl && mergeBtnEl.parentElement) {
+                controlsContainer = mergeBtnEl.parentElement;
             }
         }
+        if (!controlsContainer) return;
+
+        // If buttons already exist but are misplaced, move them into the correct container
+        const existingCopyAll = document.getElementById('copyAllBtn');
+        const existingClearSel = document.getElementById('clearSelectionBtn');
+        if (existingCopyAll || existingClearSel) {
+            const mergeBtn = controlsContainer.querySelector('#mergeBtn') || document.getElementById('mergeBtn');
+            if (existingClearSel) {
+                if (mergeBtn && mergeBtn.parentElement === controlsContainer) {
+                    controlsContainer.insertBefore(existingClearSel, mergeBtn);
+                } else {
+                    controlsContainer.appendChild(existingClearSel);
+                }
+            }
+            if (existingCopyAll) {
+                const ref = existingClearSel && existingClearSel.parentElement === controlsContainer
+                    ? existingClearSel
+                    : (mergeBtn && mergeBtn.parentElement === controlsContainer ? mergeBtn : null);
+                if (ref) {
+                    controlsContainer.insertBefore(existingCopyAll, ref);
+                } else {
+                    controlsContainer.appendChild(existingCopyAll);
+                }
+            }
+            this.copyAllBtn = existingCopyAll || this.copyAllBtn;
+            this.clearSelectionBtn = existingClearSel || this.clearSelectionBtn;
+            try { if (this.copyAllBtn) new bootstrap.Tooltip(this.copyAllBtn); } catch (_) {}
+            try { if (this.clearSelectionBtn) new bootstrap.Tooltip(this.clearSelectionBtn); } catch (_) {}
+            return;
+        }
+
+        // Create "Copy All Selected" button
+        this.copyAllBtn = document.createElement('button');
+        this.copyAllBtn.className = 'btn btn-info me-2';
+        this.copyAllBtn.id = 'copyAllBtn';
+        this.copyAllBtn.disabled = true;
+        this.copyAllBtn.innerHTML = '<i class="bi bi-clipboard-plus me-1"></i>Copy Selected';
+        this.copyAllBtn.setAttribute('data-bs-toggle', 'tooltip');
+        this.copyAllBtn.setAttribute('title', 'Copy content of all selected prompts');
+        this.copyAllBtn.addEventListener('click', () => this.copyAllSelectedPrompts());
+
+        // Create "Clear Selection" button
+        this.clearSelectionBtn = document.createElement('button');
+        this.clearSelectionBtn.className = 'btn btn-outline-secondary me-2';
+        this.clearSelectionBtn.id = 'clearSelectionBtn';
+        this.clearSelectionBtn.disabled = true;
+        this.clearSelectionBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Clear Selection';
+        this.clearSelectionBtn.setAttribute('data-bs-toggle', 'tooltip');
+        this.clearSelectionBtn.setAttribute('title', 'Clear selection and clipboard');
+        this.clearSelectionBtn.addEventListener('click', () => this.clearSelectionAndClipboard());
+
+        // Insert buttons before the merge button when possible
+        const mergeBtn = controlsContainer.querySelector('#mergeBtn') || document.getElementById('mergeBtn');
+        if (mergeBtn && mergeBtn.parentElement === controlsContainer) {
+            controlsContainer.insertBefore(this.clearSelectionBtn, mergeBtn);
+            controlsContainer.insertBefore(this.copyAllBtn, this.clearSelectionBtn);
+        } else {
+            controlsContainer.appendChild(this.copyAllBtn);
+            controlsContainer.appendChild(this.clearSelectionBtn);
+        }
+
+        // Initialize tooltips
+        try { new bootstrap.Tooltip(this.copyAllBtn); } catch (_) {}
+        try { new bootstrap.Tooltip(this.clearSelectionBtn); } catch (_) {}
     }
     
     /**
@@ -165,6 +218,8 @@ class PromptListManager {
                 if (previousPromptId && previousPromptId !== promptId) {
                     // Handle combination copy using existing logic
                     this.handleCombinationCopy(previousPromptId, promptId);
+                    // Prevent the auto multi-copy from the checkbox click handler for this gesture
+                    this.skipNextAutoCopy = true;
                     
                     // Clear tracking
                     this.lastSelectionTime = null;
@@ -846,6 +901,11 @@ class PromptListManager {
     handleCheckboxClick(event) {
         // Small delay to ensure checkbox state changes first
         setTimeout(() => {
+            if (this.skipNextAutoCopy) {
+                // Consume the guard and skip this auto-copy
+                this.skipNextAutoCopy = false;
+                return;
+            }
             if (this.selectedPrompts.size > 0) {
                 this.copyAllSelectedPrompts();
             }
@@ -945,31 +1005,34 @@ class PromptListManager {
             return;
         }
         
-        // Clear clipboard by writing empty string
-        navigator.clipboard.writeText('').then(() => {
-            // Clear all checkboxes
-            this.checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    checkbox.checked = false;
-                    this.handleCheckboxChange(checkbox);
+        // Clear clipboard by writing empty string using serialized queue
+        this.enqueueClipboardWrite('', null, {
+            showSuccessToast: false,
+            onAfter: (wasSuccessful) => {
+                if (!wasSuccessful) {
+                    this.showToast('Failed to clear clipboard', 'error');
+                    return;
                 }
-            });
-            
-            // Clear combined content panel
-            this.clearCombinedContent();
-            
-            // Show visual feedback
-            this.showClearSelectionSuccess();
-            
-            // Show success message
-            const message = selectedCount === 1 
-                ? 'Selection cleared and clipboard emptied!' 
-                : `${selectedCount} selections cleared and clipboard emptied!`;
-            this.showToast(message, 'success');
-            
-        }).catch((err) => {
-            console.error('Could not clear clipboard: ', err);
-            this.showToast('Failed to clear clipboard', 'error');
+                // Clear all checkboxes
+                this.checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        checkbox.checked = false;
+                        this.handleCheckboxChange(checkbox);
+                    }
+                });
+                
+                // Clear combined content panel
+                this.clearCombinedContent();
+                
+                // Show visual feedback
+                this.showClearSelectionSuccess();
+                
+                // Show success message
+                const message = selectedCount === 1 
+                    ? 'Selection cleared and clipboard emptied!'
+                    : `${selectedCount} selections cleared and clipboard emptied!`;
+                this.showToast(message, 'success');
+            }
         });
     }
     
@@ -1073,12 +1136,9 @@ class PromptListManager {
      * Enhanced copy to clipboard with visual feedback
      */
     copyToClipboard(text, buttonElement) {
-        navigator.clipboard.writeText(text).then(() => {
-            this.showCopySuccess(buttonElement);
-            this.showToast('Content copied to clipboard!', 'success');
-        }).catch((err) => {
-            console.error('Could not copy text: ', err);
-            this.showToast('Failed to copy to clipboard', 'error');
+        this.enqueueClipboardWrite(text, buttonElement, {
+            showSuccessToast: true,
+            successMessage: 'Content copied to clipboard!'
         });
     }
     
@@ -1086,6 +1146,11 @@ class PromptListManager {
      * Show copy success visual feedback
      */
     showCopySuccess(buttonElement) {
+        if (!buttonElement) return;
+        // Only apply visual swap to actual button-like elements
+        if (!(buttonElement instanceof HTMLElement) || (buttonElement.tagName !== 'BUTTON' && buttonElement.tagName !== 'A')) {
+            return;
+        }
         const originalHTML = buttonElement.innerHTML;
         const originalClass = buttonElement.className;
         
@@ -1106,6 +1171,64 @@ class PromptListManager {
             buttonElement.innerHTML = originalHTML;
             buttonElement.className = originalClass;
         }, 2000);
+    }
+
+    /**
+     * Queue and serialize clipboard write operations to avoid race conditions and false error toasts
+     */
+    enqueueClipboardWrite(text, buttonElement = null, options = {}) {
+        const job = {
+            text,
+            buttonElement,
+            showSuccessToast: options.showSuccessToast !== false,
+            successMessage: options.successMessage || 'Content copied to clipboard!',
+            onAfter: typeof options.onAfter === 'function' ? options.onAfter : null
+        };
+        this.clipboardQueue.push(job);
+        if (!this.isClipboardWriteInProgress) {
+            this.processClipboardQueue();
+        }
+        return job;
+    }
+
+    processClipboardQueue() {
+        if (this.isClipboardWriteInProgress) return;
+        const job = this.clipboardQueue.shift();
+        if (!job) return;
+        this.isClipboardWriteInProgress = true;
+
+        navigator.clipboard.writeText(job.text)
+            .then(() => {
+                this.lastSuccessfulCopyAt = Date.now();
+                // Visual feedback for button when provided
+                if (job.buttonElement) {
+                    this.showCopySuccess(job.buttonElement);
+                }
+                if (job.showSuccessToast && job.successMessage) {
+                    this.showToast(job.successMessage, 'success');
+                }
+                if (job.onAfter) job.onAfter(true);
+            })
+            .catch((err) => {
+                const now = Date.now();
+                const withinSuppression = (now - this.lastSuccessfulCopyAt) <= this.clipboardErrorSuppressionMs;
+                if (!withinSuppression) {
+                    console.error('Could not copy text: ', err);
+                    this.showToast('Failed to copy to clipboard', 'error');
+                } else {
+                    // Suppress noisy error when a recent success happened
+                    console.warn('Clipboard write failed shortly after a success. Suppressing error toast.', err);
+                }
+                if (job.onAfter) job.onAfter(false);
+            })
+            .finally(() => {
+                this.isClipboardWriteInProgress = false;
+                // Continue with next queued job, if any
+                if (this.clipboardQueue.length > 0) {
+                    // Yield to event loop to avoid deep recursion
+                    setTimeout(() => this.processClipboardQueue(), 0);
+                }
+            });
     }
     
     /**
