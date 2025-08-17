@@ -53,6 +53,9 @@ class PromptListManager {
         this.favoriteSelectionInfo = null;
         this.confirmSaveFavoriteBtn = null;
         this.favorites = [];
+
+        // Programmatic selection guard to prevent unintended pair-copy behavior
+        this.suppressCombinationCopy = false;
         
         // Tag filtering functionality
         this.tagFiltersContainer = document.querySelector('.popular-tags-container');
@@ -155,7 +158,7 @@ class PromptListManager {
             
             // Check if this is part of a combination selection
             const now = Date.now();
-            if (this.lastSelectionTime && (now - this.lastSelectionTime) < 100) {
+            if (!this.suppressCombinationCopy && this.lastSelectionTime && (now - this.lastSelectionTime) < 100) {
                 // This is likely a combination selection
                 const previousPromptId = this.lastSelectedPromptId;
                 if (previousPromptId && previousPromptId !== promptId) {
@@ -409,10 +412,13 @@ class PromptListManager {
         if (!merge) {
             this.checkboxes.forEach(cb => { if (cb.checked) { cb.checked = false; this.handleCheckboxChange(cb); } });
         }
+        // Temporarily suppress pair auto-copy while applying many selections
+        this.suppressCombinationCopy = true;
         (favorite.items || []).forEach(item => {
             const cb = document.getElementById(`prompt-${item.prompt_id}`);
             if (cb) { cb.checked = true; this.handleCheckboxChange(cb); }
         });
+        this.suppressCombinationCopy = false;
         // Missing due to filters?
         const total = (favorite.items || []).length;
         const visible = (favorite.items || []).filter(it => document.getElementById(`prompt-${it.prompt_id}`)).length;
@@ -425,6 +431,11 @@ class PromptListManager {
         // Show only favorite's prompts in the view
         const favoriteIds = new Set((favorite.items || []).map(i => parseInt(i.prompt_id)));
         this.filterViewToFavorite(favorite.name, favoriteIds);
+
+        // Copy all selected into clipboard so multi-item favorites place full content (not just a pair)
+        if (this.selectedPrompts.size > 0) {
+            this.copyAllSelectedPrompts();
+        }
     }
 
     /**
