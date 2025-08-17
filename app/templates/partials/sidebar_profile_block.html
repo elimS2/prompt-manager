@@ -1,0 +1,32 @@
+{#
+  Sidebar GitHub Profile Block
+  Reads values from variables if provided (e.g., via include kwargs or context processor),
+  otherwise falls back to safe defaults.
+  Variables:
+    - owner_github_username (e.g., "elimS2")
+    - owner_github_url (e.g., "https://github.com/elimS2")
+    - owner_github_avatar_url (e.g., "https://github.com/elimS2.png?size=50")
+#}
+
+{% set _username = (owner_github_username or 'elimS2') %}
+{% set _profile_url = (owner_github_url or ('https://github.com/' ~ _username)) %}
+{% set _avatar_url = (owner_github_avatar_url or ('https://github.com/' ~ _username ~ '.png?size=50')) %}
+
+<div class="card theme-surface theme-border mt-3">
+    <div class="card-body p-2">
+        <a href="{{ _profile_url }}" target="_blank" rel="noopener noreferrer"
+           class="d-flex align-items-center justify-content-between text-decoration-none theme-text px-2 py-1">
+            <span class="d-flex align-items-center gap-2 text-truncate">
+                <i class="bi bi-github" aria-hidden="true"></i>
+                <span class="text-truncate">GitHub: {{ _username }}</span>
+            </span>
+            <img class="rounded-circle" src="{{ _avatar_url }}" alt="{{ _username }} avatar"
+                 width="25" height="25" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                 onerror="this.style.display='none'" />
+        </a>
+    </div>
+    {# Note: If strict bottom docking is required, place this card in a flex column container and apply mt-auto on the wrapper. #}
+    {# Accessibility: Link has clear text, avatar has alt text, opens in new tab with rel noopener. #}
+</div>
+
+

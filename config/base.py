@@ -49,6 +49,11 @@ class BaseConfig:
     OAUTH_GOOGLE_REDIRECT_URI = os.getenv("OAUTH_GOOGLE_REDIRECT_URI")
     OAUTH_GOOGLE_ALLOWED_HD = os.getenv("OAUTH_GOOGLE_ALLOWED_HD")
     
+    # Owner / Profile (for sidebar GitHub block)
+    OWNER_GITHUB_USERNAME = os.getenv("OWNER_GITHUB_USERNAME", "elimS2")
+    OWNER_GITHUB_URL = os.getenv("OWNER_GITHUB_URL")
+    OWNER_GITHUB_AVATAR_URL = os.getenv("OWNER_GITHUB_AVATAR_URL")
+    
     @staticmethod
     def init_app(app):
         """Initialize application with this config."""

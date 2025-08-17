@@ -75,12 +75,21 @@ def create_app(config_name='development'):
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
-    # Expose current_user in templates
+    # Expose current_user and owner GitHub profile info in templates
     from flask_login import current_user
 
     @app.context_processor
-    def inject_current_user():
-        return {"current_user": current_user}
+    def inject_template_globals():
+        return {
+            "current_user": current_user,
+            "owner_github_username": app.config.get("OWNER_GITHUB_USERNAME"),
+            "owner_github_url": app.config.get("OWNER_GITHUB_URL") or (
+                f"https://github.com/{app.config.get('OWNER_GITHUB_USERNAME')}" if app.config.get("OWNER_GITHUB_USERNAME") else None
+            ),
+            "owner_github_avatar_url": app.config.get("OWNER_GITHUB_AVATAR_URL") or (
+                f"https://github.com/{app.config.get('OWNER_GITHUB_USERNAME')}.png?size=50" if app.config.get("OWNER_GITHUB_USERNAME") else None
+            ),
+        }
     
     # Configure logging
     from app.utils.logging import setup_logging, log_request
