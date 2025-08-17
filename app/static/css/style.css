@@ -2704,3 +2704,16 @@ pre {
 #favoritesDropdownBtn::after {
     margin-left: 0.25rem;
 }
+
+/* Ensure favorite titles are not blue on (near) blue background */
+#favoritesDropdownMenu .apply-favorite-btn {
+    color: var(--text-primary) !important;
+    text-decoration: none;
+}
+
+#favoritesDropdownMenu .apply-favorite-btn:hover,
+#favoritesDropdownMenu .apply-favorite-btn:focus,
+#favoritesDropdownMenu .apply-favorite-btn:active {
+    color: var(--text-primary) !important;
+    text-decoration: none;
+}
