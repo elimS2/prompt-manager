@@ -456,7 +456,7 @@ html[data-theme] {
 
 /* Enhanced dropdown styling */
 [data-theme="dark"] .dropdown-menu {
-    background-color: var(--surface-color);
+    background-color: #001b47;
     border-color: var(--border-color);
     box-shadow: 0 4px 12px var(--shadow-color);
 }
@@ -1123,7 +1123,7 @@ body {
     align-self: center;
     line-height: 1;
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 5px;
 }
 
 .drag-handle:hover {
@@ -1275,6 +1275,7 @@ body {
     gap: 0.25rem;
     align-items: center;
     flex-wrap: nowrap;
+    padding-bottom: 5px;
 }
 
 .prompt-actions-group .btn {
@@ -1370,6 +1371,7 @@ body {
     min-width: 0;
     flex-shrink: 1;
     max-width: 300px;
+    padding-bottom: 5px;
 }
 
 .tag-inline {
@@ -2056,11 +2058,15 @@ pre {
     padding-bottom: 0rem !important;
 }
 
+.mb-3 {
+    margin-bottom: 0.5rem !important;
+}
+
 .form-check.flex-grow-1 {
     margin-left: 0.5rem;
     margin-right: auto;
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 5px;
 }
 
 /* Popular Tags Container Transitions */
@@ -2709,6 +2715,21 @@ pre {
 #favoritesDropdownMenu .apply-favorite-btn {
     color: var(--text-primary) !important;
     text-decoration: none;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+#favoritesDropdownMenu .apply-favorite-btn:focus,
+#favoritesDropdownMenu .apply-favorite-btn:focus-visible,
+#favoritesDropdownMenu .apply-favorite-btn:active {
+    outline: none;
+    box-shadow: none;
+}
+
+#favoritesDropdownMenu .dropdown-item {
+    border: none !important;
+    background: transparent;
 }
 
 #favoritesDropdownMenu .apply-favorite-btn:hover,
