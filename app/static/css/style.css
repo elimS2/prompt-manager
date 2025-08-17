@@ -206,9 +206,14 @@ html[data-theme] {
 }
 
 [data-theme="dark"] .btn-outline-success:hover {
-    background-color: var(--success-color);
-    border-color: var(--success-color);
+    background-color: #FAD00C;
+    border-color: #FAD00C;
     color: var(--text-inverse);
+}
+
+[data-theme="dark"] .btn-outline-success {
+    color: #FAD00C;
+    border-color: #FAD00C;
 }
 
 [data-theme="dark"] .btn-outline-warning:hover {
@@ -1549,14 +1554,14 @@ pre {
 
 /* Restore Button Styles */
 .btn-outline-success {
-    color: var(--success-color);
-    border-color: var(--success-color);
+    color: #FAD00C;
+    border-color: #FAD00C;
 }
 
 .btn-outline-success:hover {
     color: var(--text-inverse);
-    background-color: var(--success-color);
-    border-color: var(--success-color);
+    background-color: #FAD00C;
+    border-color: #FAD00C;
     transform: translateY(-1px);
 }
 
@@ -2709,6 +2714,19 @@ pre {
 
 #favoritesDropdownBtn::after {
     margin-left: 0.25rem;
+}
+
+/* Make Favorites dropdown button gold-themed */
+#favoritesDropdownBtn {
+    color: #FAD00C;
+    border-color: #FAD00C;
+}
+
+#favoritesDropdownBtn:hover,
+#favoritesDropdownBtn:focus {
+    background-color: #FAD00C;
+    border-color: #FAD00C;
+    color: var(--text-inverse);
 }
 
 /* Ensure favorite titles are not blue on (near) blue background */
