@@ -44,6 +44,16 @@ class PromptListManager {
         this.isPanelVisible = false;
         this.panelVisibilityPreference = localStorage.getItem('combinedPanelVisible') === 'true';
         
+        // Favorites UI
+        this.saveFavoriteBtn = document.getElementById('saveFavoriteBtn');
+        this.favoritesDropdownMenu = document.getElementById('favoritesDropdownMenu');
+        this.mergeFavoriteToggle = document.getElementById('mergeFavoriteToggle');
+        this.saveFavoriteModal = null;
+        this.favoriteNameInput = null;
+        this.favoriteSelectionInfo = null;
+        this.confirmSaveFavoriteBtn = null;
+        this.favorites = [];
+        
         // Tag filtering functionality
         this.tagFiltersContainer = document.querySelector('.popular-tags-container');
         this.currentStatusFilter = this.getCurrentStatusFilter();
@@ -64,12 +74,14 @@ class PromptListManager {
         this.initCombinedContentPanel();
         this.initPanelToggleButton();
         this.restorePanelVisibility();
+        this.initFavorites();
         this.initTagFilters();
         this.syncSelectedTagVisualsWithURL();
         this.initStatusFilterListener();
         this.initDragAndDrop();
         this.initAttachedPrompts();
         this.initAttachPromptButtons();
+        this.applyFavoriteFromSSR();
         console.log('✅ PromptListManager initialization complete');
     }
     
@@ -226,6 +238,11 @@ class PromptListManager {
             });
         }
         
+        // Update Save Favorite button
+        if (this.saveFavoriteBtn) {
+            this.saveFavoriteBtn.disabled = selectedCount === 0;
+        }
+        
         // Update merge button functionality
         if (selectedCount >= 2) {
             this.mergeBtn.onclick = () => {
@@ -240,6 +257,248 @@ class PromptListManager {
         
         // Update checkbox tooltips
         this.updateCheckboxTooltips();
+    }
+    
+    /**
+     * Favorites: init, load, render, save, apply, delete
+     */
+    initFavorites() {
+        if (this.saveFavoriteBtn) {
+            this.saveFavoriteBtn.addEventListener('click', () => this.openSaveFavoriteModal());
+        }
+        this.loadFavorites();
+    }
+
+    initSaveFavoriteModal() {
+        if (!this.saveFavoriteModal) {
+            const modalEl = document.getElementById('saveFavoriteModal');
+            if (!modalEl) return;
+            this.saveFavoriteModal = new bootstrap.Modal(modalEl);
+            this.favoriteNameInput = document.getElementById('favoriteNameInput');
+            this.favoriteSelectionInfo = document.getElementById('favoriteSelectionInfo');
+            this.confirmSaveFavoriteBtn = document.getElementById('confirmSaveFavoriteBtn');
+
+            if (this.favoriteNameInput) {
+                this.favoriteNameInput.addEventListener('input', () => {
+                    const hasText = this.favoriteNameInput.value.trim().length > 0;
+                    this.confirmSaveFavoriteBtn.disabled = !hasText;
+                });
+            }
+
+            if (this.confirmSaveFavoriteBtn) {
+                this.confirmSaveFavoriteBtn.addEventListener('click', () => this.handleSaveFavorite());
+            }
+        }
+        // Update info
+        if (this.favoriteSelectionInfo) {
+            this.favoriteSelectionInfo.textContent = `${this.selectedPrompts.size} prompts will be saved in this favorite.`;
+        }
+    }
+
+    openSaveFavoriteModal() {
+        this.initSaveFavoriteModal();
+        if (this.favoriteNameInput) {
+            const defaultName = `Favorite (${this.selectedPrompts.size})`;
+            this.favoriteNameInput.value = defaultName;
+            this.confirmSaveFavoriteBtn.disabled = false;
+        }
+        if (this.saveFavoriteModal) this.saveFavoriteModal.show();
+    }
+    
+    async loadFavorites() {
+        try {
+            const res = await fetch('/api/favorites');
+            if (!res.ok) throw new Error('Failed to load favorites');
+            const data = await res.json();
+            this.favorites = data.favorites || [];
+            this.renderFavoritesDropdown();
+            // If SSR requested a favorite, apply it after load
+            this.applyFavoriteFromSSR();
+        } catch (e) {
+            console.warn('Favorites load error:', e);
+            this.renderFavoritesDropdown(true);
+        }
+    }
+
+    applyFavoriteFromSSR() {
+        try {
+            const fid = window.__FAVORITE_ID_FROM_SSR__;
+            if (!fid) return;
+            const found = this.favorites.find(f => f.id === fid);
+            if (found) {
+                this.applyFavorite(fid);
+                // ensure dropdown reflects merge off by default
+                if (this.mergeFavoriteToggle) this.mergeFavoriteToggle.checked = false;
+            }
+        } catch (_) { /* ignore */ }
+    }
+    
+    renderFavoritesDropdown(hasError = false) {
+        if (!this.favoritesDropdownMenu) return;
+        if (hasError) {
+            this.favoritesDropdownMenu.innerHTML = '<li class="px-3 py-2 text-danger small">Failed to load favorites</li>';
+            return;
+        }
+        if (!this.favorites || this.favorites.length === 0) {
+            this.favoritesDropdownMenu.innerHTML = '<li class="px-3 py-2 text-muted small">No favorites yet</li>';
+            return;
+        }
+        const itemsHtml = this.favorites.map(f => {
+            const count = (f.items || []).length;
+            return `
+                <li>
+                    <div class="dropdown-item d-flex justify-content-between align-items-center">
+                        <button class="btn btn-link p-0 text-start apply-favorite-btn" data-id="${f.id}">
+                            <i class="bi bi-play-circle me-2"></i>${this.escapeHtml(f.name)} <span class="text-muted">(${count})</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-favorite-btn" title="Delete" data-id="${f.id}"><i class="bi bi-trash"></i></button>
+                    </div>
+                </li>`;
+        }).join('');
+        this.favoritesDropdownMenu.innerHTML = itemsHtml;
+        this.favoritesDropdownMenu.querySelectorAll('.apply-favorite-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.applyFavorite(parseInt(btn.dataset.id)));
+        });
+        this.favoritesDropdownMenu.querySelectorAll('.delete-favorite-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                if (confirm('Delete this favorite?')) this.deleteFavorite(id);
+            });
+        });
+    }
+    
+    escapeHtml(text) {
+        return (text || '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+    }
+    
+    async handleSaveFavorite() {
+        if (this.selectedPrompts.size === 0) return;
+        const name = (this.favoriteNameInput?.value || '').trim();
+        if (!name) return;
+        const promptIds = this.getSelectedPromptIdsInDomOrder();
+        try {
+            const res = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, prompt_ids: promptIds })
+            });
+            if (!res.ok) throw new Error('Failed to save favorite');
+            this.showToast('Favorite saved!', 'success');
+            if (this.saveFavoriteModal) this.saveFavoriteModal.hide();
+            await this.loadFavorites();
+        } catch (e) {
+            console.error(e);
+            this.showToast('Failed to save favorite', 'error');
+        }
+    }
+    
+    getSelectedPromptIdsInDomOrder() {
+        // Collect according to current DOM order for predictable application
+        const ids = [];
+        document.querySelectorAll('.prompt-checkbox').forEach(cb => {
+            if (cb.checked) ids.push(parseInt(cb.value));
+        });
+        return ids;
+    }
+    
+    applyFavorite(favoriteId) {
+        const favorite = this.favorites.find(f => f.id === favoriteId);
+        if (!favorite) return;
+        const merge = !!(this.mergeFavoriteToggle && this.mergeFavoriteToggle.checked);
+        if (!merge) {
+            this.checkboxes.forEach(cb => { if (cb.checked) { cb.checked = false; this.handleCheckboxChange(cb); } });
+        }
+        (favorite.items || []).forEach(item => {
+            const cb = document.getElementById(`prompt-${item.prompt_id}`);
+            if (cb) { cb.checked = true; this.handleCheckboxChange(cb); }
+        });
+        // Missing due to filters?
+        const total = (favorite.items || []).length;
+        const visible = (favorite.items || []).filter(it => document.getElementById(`prompt-${it.prompt_id}`)).length;
+        if (visible < total) {
+            this.showToast(`Applied favorite "${favorite.name}" (${visible}/${total}). Some prompts are hidden by filters.`, 'warning');
+        } else {
+            this.showToast(`Applied favorite "${favorite.name}"`, 'success');
+        }
+
+        // Show only favorite's prompts in the view
+        const favoriteIds = new Set((favorite.items || []).map(i => parseInt(i.prompt_id)));
+        this.filterViewToFavorite(favorite.name, favoriteIds);
+    }
+
+    /**
+     * Hide all prompt cards except those in favoriteIds and show a dismissible banner.
+     */
+    filterViewToFavorite(favoriteName, favoriteIds) {
+        const listContainer = document.getElementById('promptsList');
+        if (!listContainer) return;
+        listContainer.querySelectorAll('.col-12').forEach(col => {
+            const checkbox = col.querySelector('.prompt-checkbox');
+            if (!checkbox) return;
+            const id = parseInt(checkbox.value);
+            col.style.display = favoriteIds.has(id) ? '' : 'none';
+        });
+
+        this.renderFavoriteFilterBanner(favoriteName, favoriteIds.size);
+        this.activeFavoriteFilter = { name: favoriteName, ids: favoriteIds };
+    }
+
+    renderFavoriteFilterBanner(favoriteName, count) {
+        let banner = document.getElementById('favoriteFilterBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'favoriteFilterBanner';
+            banner.className = 'alert alert-info d-flex justify-content-between align-items-center';
+            const parent = document.querySelector('.col-md-9');
+            const promptsList = document.getElementById('promptsList');
+            if (parent && promptsList) {
+                parent.insertBefore(banner, promptsList);
+            } else {
+                document.body.prepend(banner);
+            }
+        }
+        banner.innerHTML = `
+            <div>
+                <i class="bi bi-filter me-2"></i>
+                Showing favorite <strong>"${this.escapeHtml(favoriteName)}"</strong> (${count}). All other prompts are hidden.
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" id="clearFavoriteFilterBtn">
+                    <i class="bi bi-x-circle me-1"></i>Clear favorite filter
+                </button>
+            </div>
+        `;
+        const clearBtn = banner.querySelector('#clearFavoriteFilterBtn');
+        clearBtn.addEventListener('click', () => this.clearFavoriteFilter());
+    }
+
+    clearFavoriteFilter() {
+        const listContainer = document.getElementById('promptsList');
+        if (listContainer) {
+            listContainer.querySelectorAll('.col-12').forEach(col => {
+                col.style.display = '';
+            });
+        }
+        const banner = document.getElementById('favoriteFilterBanner');
+        if (banner) banner.remove();
+        this.activeFavoriteFilter = null;
+    }
+    
+    async deleteFavorite(favoriteId) {
+        try {
+            const res = await fetch(`/api/favorites/${favoriteId}`, { method: 'DELETE' });
+            if (res.status === 204) {
+                this.showToast('Favorite deleted', 'success');
+                this.favorites = this.favorites.filter(f => f.id !== favoriteId);
+                this.renderFavoritesDropdown();
+            } else {
+                this.showToast('Failed to delete favorite', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            this.showToast('Failed to delete favorite', 'error');
+        }
     }
     
     /**

@@ -2673,3 +2673,27 @@ pre {
         padding: 0.5rem;
     }
 }
+
+/* Favorites UI */
+#saveFavoriteBtn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#favoritesDropdownMenu .dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#favoritesDropdownMenu .delete-favorite-btn {
+    visibility: hidden;
+}
+
+#favoritesDropdownMenu li:hover .delete-favorite-btn {
+    visibility: visible;
+}
+
+#favoritesDropdownBtn::after {
+    margin-left: 0.25rem;
+}

@@ -4,7 +4,7 @@ Provides JSON API endpoints following REST conventions.
 """
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
-from app.services import PromptService, TagService, MergeService, CursorService, AttachedPromptService
+from app.services import PromptService, TagService, MergeService, CursorService, AttachedPromptService, FavoriteSetService
 from app.controllers.base import BaseController
 from functools import wraps
 
@@ -17,6 +17,7 @@ prompt_service = PromptService()
 tag_service = TagService()
 merge_service = MergeService()
 cursor_service = CursorService()
+favorite_service = FavoriteSetService()
 
 # Initialize repositories for AttachedPromptService
 from app.repositories import AttachedPromptRepository, PromptRepository
@@ -433,6 +434,53 @@ def health_check():
         'service': 'Prompt Manager API',
         'version': '1.0.0'
     }), 200
+
+
+# Favorite Sets endpoints
+@api_bp.route('/favorites', methods=['GET'])
+@login_required
+@BaseController.handle_service_error
+def list_favorites():
+    # Use flask_login current_user; route is protected by @login_required
+    from flask_login import current_user
+    user_id = current_user.id
+    favorites = favorite_service.list_for_user(user_id)
+    return jsonify({'favorites': [f.to_dict() for f in favorites]}), 200
+
+
+@api_bp.route('/favorites', methods=['POST'])
+@login_required
+@require_json
+@BaseController.validate_request_data(['name'])
+@BaseController.handle_service_error
+def create_favorite():
+    from flask_login import current_user
+    data = request.get_json()
+    prompt_ids = data.get('prompt_ids') or []
+    favorite = favorite_service.create(current_user.id, data['name'], data.get('description', ''), prompt_ids)
+    return jsonify({'message': 'Favorite created successfully', 'favorite': favorite.to_dict()}), 201
+
+
+@api_bp.route('/favorites/<int:favorite_id>', methods=['PUT'])
+@login_required
+@require_json
+@BaseController.handle_service_error
+def update_favorite(favorite_id):
+    from flask_login import current_user
+    data = request.get_json()
+    favorite = favorite_service.update(current_user.id, favorite_id, data)
+    return jsonify({'message': 'Favorite updated successfully', 'favorite': favorite.to_dict()}), 200
+
+
+@api_bp.route('/favorites/<int:favorite_id>', methods=['DELETE'])
+@login_required
+@BaseController.handle_service_error
+def delete_favorite(favorite_id):
+    from flask_login import current_user
+    success = favorite_service.delete(current_user.id, favorite_id)
+    if success:
+        return jsonify({'message': 'Favorite deleted successfully'}), 204
+    return jsonify({'error': 'Favorite not found'}), 404
 
 
 # Cursor IDE Integration endpoints

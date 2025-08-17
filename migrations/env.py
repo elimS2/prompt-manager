@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import Flask app and models
 from app import create_app
-from app.models import db, BaseModel, Prompt, Tag, AttachedPrompt
+from app.models import db, BaseModel, Prompt, Tag, AttachedPrompt, FavoriteSet, FavoriteSetItem
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

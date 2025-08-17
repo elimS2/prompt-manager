@@ -15,7 +15,7 @@ from config.development import DevelopmentConfig
 def init_database():
     """Initialize database with all tables."""
     # Import models to ensure they are registered with SQLAlchemy
-    from app.models import Prompt, Tag
+    from app.models import Prompt, Tag, FavoriteSet, FavoriteSetItem
     
     # Create a minimal Flask app context
     from flask import Flask
@@ -26,7 +26,7 @@ def init_database():
     db.init_app(app)
     
     with app.app_context():
-        # Create all tables
+        # Create all tables (for initial dev setup). For ongoing changes, prefer Alembic migrations.
         print("Creating database tables...")
         db.create_all()
         print("Database tables created successfully!")

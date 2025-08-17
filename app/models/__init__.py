@@ -6,5 +6,6 @@ from .tag import Tag
 from .attached_prompt import AttachedPrompt
 from .user import User
 from .allowlist import EmailAllowlist
+from .favorite_set import FavoriteSet, FavoriteSetItem
 
-__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags', 'AttachedPrompt', 'User', 'EmailAllowlist']
+__all__ = ['db', 'BaseModel', 'Prompt', 'Tag', 'prompt_tags', 'AttachedPrompt', 'User', 'EmailAllowlist', 'FavoriteSet', 'FavoriteSetItem']

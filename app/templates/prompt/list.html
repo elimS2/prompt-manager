@@ -84,13 +84,63 @@
                 {% endif %}
             </div>
         </div>
+        
+        {% if favorite_id %}
+            <script>
+                window.__FAVORITE_ID_FROM_SSR__ = {{ favorite_id | tojson }};
+            </script>
+        {% endif %}
+
+        <!-- Save Favorite Modal -->
+        <div class="modal fade" id="saveFavoriteModal" tabindex="-1" aria-labelledby="saveFavoriteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content theme-surface theme-border">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="saveFavoriteModalLabel">Save Favorite</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="favoriteNameInput" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="favoriteNameInput" placeholder="e.g., Daily drafting" maxlength="150">
+                            <div class="form-text">Up to 150 characters. Must be unique per user.</div>
+                        </div>
+                        <div class="mb-2 small text-muted" id="favoriteSelectionInfo"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmSaveFavoriteBtn" disabled>Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="col-md-9">
         <!-- Actions Bar -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="theme-text">Prompts</h1>
-            <div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="btn-group me-2" role="group" aria-label="Favorites controls">
+                    <button class="btn btn-outline-success btn-sm theme-transition" id="saveFavoriteBtn" disabled>
+                        <i class="bi bi-star me-1"></i>Save Selection
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle theme-transition" id="favoritesDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-stars me-1"></i>Favorites
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="favoritesDropdownBtn" id="favoritesDropdownMenu">
+                            <li class="px-3 py-2 text-muted small">No favorites yet</li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="px-3 py-2">
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" id="mergeFavoriteToggle">
+                                    <label class="form-check-label small" for="mergeFavoriteToggle">Merge with current selection</label>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <button class="btn btn-outline-info me-2 theme-transition" id="toggleCombinedPanelBtn" data-bs-toggle="tooltip" title="Toggle Combined Content Panel">
                     <i class="bi bi-layout-text-window me-1"></i>Toggle Panel
                 </button>

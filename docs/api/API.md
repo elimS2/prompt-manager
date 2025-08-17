@@ -30,6 +30,69 @@ Currently, the API does not require authentication. This will be added in future
 ## Endpoints
 
 ### Prompts
+### Favorites
+
+#### List Favorites
+```http
+GET /api/favorites
+```
+
+Auth required.
+
+**Response:** 200 OK
+```json
+{
+  "favorites": [
+    {
+      "id": 1,
+      "name": "Daily drafting",
+      "description": null,
+      "is_active": true,
+      "user_id": 1,
+      "created_at": "2025-08-17T17:20:00Z",
+      "items": [
+        { "id": 11, "favorite_set_id": 1, "prompt_id": 36, "position": 0, "created_at": "..." },
+        { "id": 12, "favorite_set_id": 1, "prompt_id": 37, "position": 1, "created_at": "..." }
+      ]
+    }
+  ]
+}
+```
+
+#### Create Favorite
+```http
+POST /api/favorites
+```
+
+**Request Body:**
+```json
+{ "name": "Daily drafting", "description": "optional", "prompt_ids": [36,37] }
+```
+
+**Response:** 201 Created
+```json
+{ "message": "Favorite created successfully", "favorite": { "id": 1, "name": "Daily drafting", "items": [...] } }
+```
+
+#### Update Favorite
+```http
+PUT /api/favorites/{favorite_id}
+```
+
+Body fields optional: `name`, `description`, `prompt_ids` (заменяет состав и порядок).
+
+**Response:** 200 OK → `{ "message": "Favorite updated successfully", "favorite": { ... } }`
+
+#### Delete Favorite
+```http
+DELETE /api/favorites/{favorite_id}
+```
+
+**Response:** 204 No Content
+
+#### Deep-linking (SSR)
+
+Веб-страница `/prompts?favorite_id={id}` применяет избранное при загрузке и скрывает остальные карточки. Поддерживается также в клиентском JS.
 
 #### List Prompts
 ```http

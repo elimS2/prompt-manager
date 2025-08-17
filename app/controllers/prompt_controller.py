@@ -81,11 +81,14 @@ def index():
         prompts = result
         pagination = None
     
+    # SSR favorite_id passthrough
+    favorite_id = request.args.get('favorite_id', type=int)
     return render_template('prompt/list.html',
                          prompts=prompts,
                          pagination=pagination,
                          filters=filters,
-                         popular_tags=popular_tags)
+                         popular_tags=popular_tags,
+                         favorite_id=favorite_id)
 
 
 @prompt_bp.route('/prompts/create', methods=['GET', 'POST'])
