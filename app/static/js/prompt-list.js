@@ -360,7 +360,7 @@ class PromptListManager {
         }).join('');
         this.favoritesDropdownMenu.innerHTML = itemsHtml;
         this.favoritesDropdownMenu.querySelectorAll('.apply-favorite-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.applyFavorite(parseInt(btn.dataset.id)));
+            btn.addEventListener('click', () => this.handleApplyFavoriteClick(parseInt(btn.dataset.id)));
         });
         this.favoritesDropdownMenu.querySelectorAll('.delete-favorite-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -369,6 +369,79 @@ class PromptListManager {
                 if (confirm('Delete this favorite?')) this.deleteFavorite(id);
             });
         });
+    }
+
+    async handleApplyFavoriteClick(favoriteId) {
+        const merge = !!(this.mergeFavoriteToggle && this.mergeFavoriteToggle.checked);
+        if (merge) {
+            this.applyFavorite(favoriteId);
+            return;
+        }
+
+        // Build clean URL without filters
+        let targetUrl;
+        try {
+            const url = new URL(window.location.href);
+            url.pathname = '/prompts';
+            url.searchParams.delete('search');
+            url.searchParams.delete('is_active');
+            url.searchParams.delete('tags');
+            url.searchParams.delete('page');
+            url.searchParams.delete('sort_by');
+            url.searchParams.set('is_active', 'all');
+            url.searchParams.set('per_page', '100');
+            // Do not include favorite_id in the fetch URL's HTML to avoid SSR auto-apply; we'll apply client-side after load
+            targetUrl = url.toString();
+            // Reflect clean filters in the address bar without reload
+            window.history.pushState({}, '', url.toString());
+        } catch (_) {
+            targetUrl = '/prompts?is_active=all&per_page=100';
+            window.history.pushState({}, '', targetUrl);
+        }
+
+        // Fetch and swap only the prompts list to avoid full page reload flicker
+        try {
+            await this.reloadPromptsListWithUrl(targetUrl);
+            // Now apply the favorite on the freshly loaded full list
+            this.applyFavorite(favoriteId);
+        } catch (e) {
+            // Fallback to full navigation if anything goes wrong
+            window.location.href = `${targetUrl}&favorite_id=${encodeURIComponent(favoriteId)}`;
+        }
+    }
+
+    async reloadPromptsListWithUrl(url) {
+        const response = await fetch(url, { headers: { 'Accept': 'text/html' } });
+        if (!response.ok) throw new Error('Failed to fetch prompts list');
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newList = doc.querySelector('#promptsList');
+        const currentListContainer = document.querySelector('#promptsList');
+        if (!newList || !currentListContainer) throw new Error('Prompts list container not found');
+        currentListContainer.innerHTML = newList.innerHTML;
+        this.updateDomRefsAfterListReload();
+    }
+
+    updateDomRefsAfterListReload() {
+        // Re-query DOM elements present in the list area
+        this.checkboxes = document.querySelectorAll('.prompt-checkbox');
+        this.toggleButtons = document.querySelectorAll('.toggle-content-btn');
+        this.copyButtons = document.querySelectorAll('.copy-content-btn');
+        this.archiveForms = document.querySelectorAll('.archive-form');
+        this.restoreForms = document.querySelectorAll('.restore-form');
+
+        // Re-bind event handlers for newly inserted nodes
+        this.initCheckboxes();
+        this.initToggleButtons();
+        this.initCopyButtons();
+        this.initArchiveForms();
+        this.initRestoreForms();
+        this.initAttachPromptButtons();
+        this.initDetachPromptButtons();
+        this.initDragAndDrop();
+        // Refresh dynamic UI state (tooltips, counts, etc.)
+        this.updateUI();
     }
     
     escapeHtml(text) {
@@ -410,7 +483,8 @@ class PromptListManager {
         if (!favorite) return;
         const merge = !!(this.mergeFavoriteToggle && this.mergeFavoriteToggle.checked);
         if (!merge) {
-            this.checkboxes.forEach(cb => { if (cb.checked) { cb.checked = false; this.handleCheckboxChange(cb); } });
+            // Ensure we fully reset selection state so favorite doesn't append
+            this.resetSelectionState();
         }
         // Temporarily suppress pair auto-copy while applying many selections
         this.suppressCombinationCopy = true;
@@ -436,6 +510,23 @@ class PromptListManager {
         if (this.selectedPrompts.size > 0) {
             this.copyAllSelectedPrompts();
         }
+    }
+
+    /**
+     * Fully clear current selection state (checkboxes, UI classes, internal Set)
+     */
+    resetSelectionState() {
+        try {
+            this.checkboxes.forEach(cb => {
+                if (cb.checked) cb.checked = false;
+                const card = cb.closest('.prompt-card');
+                if (card) card.classList.remove('selected');
+            });
+        } catch (_) { /* ignore */ }
+        this.selectedPrompts.clear();
+        // Clear combined content panel and refresh UI indicators
+        this.clearCombinedContent();
+        this.updateUI();
     }
 
     /**
