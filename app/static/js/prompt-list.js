@@ -159,7 +159,7 @@ class PromptListManager {
         this.copyAllBtn.className = 'btn btn-info me-2';
         this.copyAllBtn.id = 'copyAllBtn';
         this.copyAllBtn.disabled = true;
-        this.copyAllBtn.innerHTML = '<i class="bi bi-clipboard-plus me-1"></i>Copy Selected';
+        this.copyAllBtn.innerHTML = '<i class="bi bi-clipboard-plus me-1"></i>Copy';
         this.copyAllBtn.setAttribute('data-bs-toggle', 'tooltip');
         this.copyAllBtn.setAttribute('title', 'Copy content of all selected prompts');
         this.copyAllBtn.addEventListener('click', () => this.copyAllSelectedPrompts());
@@ -267,7 +267,7 @@ class PromptListManager {
         // Update copy all button
         if (this.copyAllBtn) {
             this.copyAllBtn.disabled = selectedCount === 0;
-            this.copyAllBtn.innerHTML = `<i class="bi bi-clipboard-plus me-1"></i>Copy Selected (${selectedCount})`;
+            this.copyAllBtn.innerHTML = `<i class=\"bi bi-clipboard-plus me-1\"></i>Copy (${selectedCount})`;
             
             // Update tooltip
             const tooltip = bootstrap.Tooltip.getInstance(this.copyAllBtn);
@@ -1349,7 +1349,7 @@ class PromptListManager {
                     <h3 class="text-muted mt-3">All prompts archived</h3>
                     <p class="text-muted">No active prompts found.</p>
                     <a href="{{ url_for('prompt.create') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-2"></i>Create New Prompt
+                        <i class="bi bi-plus-circle me-2"></i>Create Prompt
                     </a>
                 </div>
             </div>
@@ -1607,13 +1607,13 @@ class PromptListManager {
 
         if (this.isPanelVisible) {
             this.showCombinedContentPanel();
-            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Panel';
+            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide';
             this.toggleCombinedPanelBtn.setAttribute('title', 'Hide combined content panel');
             this.toggleCombinedPanelBtn.classList.add('active');
             this.updateCombinedContentPanel(); // Update content if there are selected prompts
         } else {
             this.hideCombinedContentPanel();
-            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show Panel';
+            this.toggleCombinedPanelBtn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show';
             this.toggleCombinedPanelBtn.setAttribute('title', 'Show combined content panel');
             this.toggleCombinedPanelBtn.classList.remove('active');
         }

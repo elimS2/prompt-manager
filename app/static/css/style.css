@@ -2782,3 +2782,39 @@ pre {
     color: var(--text-primary) !important;
     text-decoration: none;
 }
+
+/* Actions bar buttons: enforce consistent height and vertical alignment */
+.actions-bar {
+    flex-wrap: wrap;
+    gap: 0.25rem; /* единый горизонтальный/вертикальный зазор */
+}
+
+.actions-bar .btn,
+.actions-bar .dropdown > .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    line-height: 1.25rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    white-space: nowrap;
+}
+
+/* Ensure dropdown toggle matches button height including border */
+.actions-bar .dropdown-toggle::after {
+    vertical-align: middle;
+}
+
+/* Единые отступы внутри группы и снаружи */
+.actions-bar .btn-group {
+    gap: 0.25rem;
+}
+
+.actions-bar .btn-group .btn {
+    margin-right: 0 !important;
+}
+
+.actions-bar > * {
+    margin-right: 0 !important;
+}

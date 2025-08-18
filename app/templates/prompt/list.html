@@ -126,13 +126,13 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="theme-text">Prompts</h1>
             </div>
-            <div class="d-flex align-items-center gap-2 mt-2">
-                <div class="btn-group me-2" role="group" aria-label="Favorites controls">
-                    <button class="btn btn-outline-success btn-sm theme-transition" id="saveFavoriteBtn" disabled>
-                        <i class="bi bi-star me-1"></i>Save Selection
+            <div class="d-flex align-items-center gap-1 mt-2 actions-bar">
+                <div class="btn-group" role="group" aria-label="Favorites controls">
+                    <button class="btn btn-outline-success theme-transition" id="saveFavoriteBtn" disabled>
+                        <i class="bi bi-star me-1"></i>Save
                     </button>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle theme-transition" id="favoritesDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle theme-transition" id="favoritesDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-stars me-1"></i>Favorites
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="favoritesDropdownBtn" id="favoritesDropdownMenu">
@@ -148,14 +148,14 @@
                         </ul>
                     </div>
                 </div>
-                <button class="btn btn-outline-info me-2 theme-transition" id="toggleCombinedPanelBtn" data-bs-toggle="tooltip" title="Toggle Combined Content Panel">
-                    <i class="bi bi-layout-text-window me-1"></i>Toggle Panel
+                <button class="btn btn-outline-info theme-transition" id="toggleCombinedPanelBtn" data-bs-toggle="tooltip" title="Toggle Combined Content Panel">
+                    <i class="bi bi-layout-text-window me-1"></i>Show
                 </button>
                 <button class="btn btn-secondary theme-transition" id="mergeBtn" disabled>
                     Merge Selected
                 </button>
                 <a href="{{ url_for('prompt.create') }}" class="btn btn-primary theme-transition">
-                    Create New Prompt
+                    Create Prompt
                 </a>
             </div>
         </div>
@@ -459,7 +459,7 @@
                                     <i class="bi bi-arrow-left me-1"></i>Clear Filters
                                 </a>
                                 <a href="{{ url_for('prompt.create') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-plus-circle me-1"></i>Create New Prompt
+                                    <i class="bi bi-plus-circle me-1"></i>Create Prompt
                                 </a>
                             </div>
                         </div>
