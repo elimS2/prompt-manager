@@ -297,7 +297,7 @@
                                         </div>
                                     {% endif %}
                                     <div class="prompt-actions-group" role="group">
-                                    <button class="btn btn-sm btn-outline-primary copy-content-btn" 
+                                    <button class="btn btn-sm btn-outline-primary copy-content-btn d-none" 
                                             data-content="{{ prompt.content|e }}"
                                             data-bs-toggle="tooltip" 
                                             title="Copy content">
@@ -320,7 +320,7 @@
                                        title="Edit prompt">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <button class="btn btn-sm btn-outline-info attach-prompt-btn"
+                                    <button class="btn btn-sm btn-outline-info attach-prompt-btn d-none"
                                             data-prompt-id="{{ prompt.id }}"
                                             data-bs-toggle="tooltip" 
                                             title="Attach another prompt">
