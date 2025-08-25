@@ -87,9 +87,18 @@ def callback():
 @login_required
 def logout():
     current_app.logger.info('User logged out. user_id=%s', getattr(current_user, 'id', None))
+    # Clear Flask-Login session
     logout_user()
+    # Clear server-side session data
+    session.clear()
+    # Build redirect response and explicitly delete auth cookies
+    response = redirect(url_for('prompt.index'))
+    session_cookie_name = current_app.config.get('SESSION_COOKIE_NAME', 'session')
+    remember_cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
+    response.delete_cookie(session_cookie_name, path='/' )
+    response.delete_cookie(remember_cookie_name, path='/' )
     flash('Signed out', 'info')
-    return redirect(url_for('prompt.index'))
+    return response
 
 
 @auth_bp.route('/access/pending')
