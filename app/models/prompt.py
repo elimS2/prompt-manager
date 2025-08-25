@@ -3,6 +3,7 @@ Prompt model representing a text prompt in the system.
 """
 from datetime import datetime
 from .base import db, BaseModel
+from sqlalchemy.orm import relationship
 
 
 # Association table for many-to-many relationship
@@ -24,6 +25,10 @@ class Prompt(BaseModel):
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     order = db.Column(db.Integer, nullable=False, default=0, index=True)
+    
+    # Ownership
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True, nullable=True)
+    owner = relationship('User', backref=db.backref('prompts', lazy=True))
     
     # Relationships
     tags = db.relationship('Tag', secondary=prompt_tags, lazy='subquery',

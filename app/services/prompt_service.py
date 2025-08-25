@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.repositories import PromptRepository, TagRepository, AttachedPromptRepository
 from app.models import Prompt, Tag
+from flask_login import current_user
 from app.utils.tag_utils import parse_tag_string, validate_tag_name
 
 
@@ -71,7 +72,8 @@ class PromptService:
                 title=title,
                 content=content,
                 description=description,
-                is_active=is_active
+                is_active=is_active,
+                user_id=(current_user.id if getattr(current_user, 'is_authenticated', False) else None)
             )
             
             # Process tags if provided
@@ -201,7 +203,12 @@ class PromptService:
         Returns:
             Prompt instance or None
         """
-        return self.prompt_repo.get_by_id(id)
+        prompt = self.prompt_repo.get_by_id(id)
+        # Enforce ownership visibility for non-admin users
+        if prompt and getattr(current_user, 'is_authenticated', False):
+            if getattr(current_user, 'role', '') != 'admin' and prompt.user_id not in (None, current_user.id):
+                return None
+        return prompt
     
     def get_prompts_by_filters(self, filters: Dict[str, Any]) -> List[Prompt]:
         """
@@ -225,6 +232,14 @@ class PromptService:
         Returns:
             List of Prompt instances or paginated result dict
         """
+        # Enforce per-user visibility (admins see all)
+        if getattr(current_user, 'is_authenticated', False):
+            if getattr(current_user, 'role', '') != 'admin':
+                filters['user_id'] = current_user.id
+        else:
+            # not authenticated: no prompts
+            filters['user_id'] = -1
+
         # Extract sorting parameters (not model fields)
         sort_by = filters.pop('sort_by', 'order')  # Default to order for drag & drop
         sort_order = filters.pop('sort_order', 'asc')  # Default to ascending order
