@@ -37,6 +37,9 @@ class ProductionConfig(BaseConfig):
         'max_overflow': 20
     }
     
+    # URL building behind reverse proxy
+    PREFERRED_URL_SCHEME = 'https'
+    
     # Content Security Policy
     CSP = {
         'default-src': "'self'",

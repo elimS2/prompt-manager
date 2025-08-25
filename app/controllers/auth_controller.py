@@ -25,12 +25,13 @@ def login():
     oauth = get_oauth()
     next_url = request.args.get('next') or url_for('prompt.index')
     session['next_url'] = next_url
-    # Always compute redirect_uri dynamically to match the current host (prevents state/cookie issues)
-    redirect_uri = url_for('auth.callback', _external=True)
-    # If configured value differs, log info to help diagnose env mismatch
+    # Prefer configured redirect URI if provided; fallback to dynamic
     configured = current_app.config.get('OAUTH_GOOGLE_REDIRECT_URI')
-    if configured and configured != redirect_uri:
-        current_app.logger.info('OAuth login: using dynamic redirect_uri=%s (configured=%s).', redirect_uri, configured)
+    redirect_uri = configured or url_for('auth.callback', _external=True)
+    if configured:
+        current_app.logger.info('OAuth login: using configured redirect_uri=%s', configured)
+    else:
+        current_app.logger.info('OAuth login: using dynamic redirect_uri=%s', redirect_uri)
     current_app.logger.info('OAuth login initiated. next_url=%s', next_url)
     return oauth.google.authorize_redirect(redirect_uri=redirect_uri)
 
