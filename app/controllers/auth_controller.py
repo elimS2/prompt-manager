@@ -33,7 +33,12 @@ def login():
     else:
         current_app.logger.info('OAuth login: using dynamic redirect_uri=%s', redirect_uri)
     current_app.logger.info('OAuth login initiated. next_url=%s', next_url)
-    return oauth.google.authorize_redirect(redirect_uri=redirect_uri)
+    # Force Google account chooser; optionally restrict hosted domain
+    params = { 'prompt': 'select_account' }
+    allowed_hd = current_app.config.get('OAUTH_GOOGLE_ALLOWED_HD')
+    if allowed_hd:
+        params['hd'] = allowed_hd
+    return oauth.google.authorize_redirect(redirect_uri=redirect_uri, **params)
 
 
 @auth_bp.route('/auth/callback')
