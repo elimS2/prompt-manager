@@ -99,11 +99,11 @@ def setup_logging(app: Flask) -> None:
             interval=1,
             backupCount=30
         )
-        access_handler.setFormatter(logging.Formatter(
-            '%(remote_addr)s - [%(asctime)s] "%(method)s %(url)s" %(status_code)s %(response_size)s'
-        ))
+        # Formatter uses final message only; fields come from log_data via logger calls
+        access_handler.setFormatter(logging.Formatter('%(message)s'))
         access_logger.addHandler(access_handler)
         access_logger.setLevel(logging.INFO)
+        access_logger.propagate = False
     
     app.logger.info(f'Logging configured for {app.config.get("ENV", "development")} environment')
 
