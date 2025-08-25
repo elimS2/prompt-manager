@@ -5,7 +5,7 @@ import os
 import logging
 import sys
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
-from flask import Flask, request, g
+from flask import Flask, request, g, has_request_context
 import time
 
 
@@ -14,16 +14,13 @@ class RequestFormatter(logging.Formatter):
     
     def format(self, record):
         """Format log record with request context."""
-        if hasattr(g, 'request_id'):
-            record.request_id = g.request_id
-        else:
-            record.request_id = '-'
-        
-        if request:
+        if has_request_context():
+            record.request_id = getattr(g, 'request_id', '-')
             record.url = request.url
             record.remote_addr = request.remote_addr
             record.method = request.method
         else:
+            record.request_id = '-'
             record.url = '-'
             record.remote_addr = '-'
             record.method = '-'

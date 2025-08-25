@@ -11,6 +11,7 @@ SQLAlchemy==2.0.23
 
 # Utilities
 click==8.1.7
+requests>=2.31,<3
 
 # Cursor IDE Integration
 pyperclip==1.8.2
