@@ -59,7 +59,9 @@ Thumbs.db
 local_settings.py
 
 # Migrations
+# Track migration scripts in VCS
 migrations/versions/*
+!migrations/versions/*.py
 
 # Temporary debug files
 page_content_*.html
