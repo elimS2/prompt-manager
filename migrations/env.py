@@ -14,6 +14,7 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import Flask app and models
+from dotenv import load_dotenv
 from app import create_app
 from app.models import db, BaseModel, Prompt, Tag, AttachedPrompt, FavoriteSet, FavoriteSetItem
 
@@ -38,7 +39,9 @@ target_metadata = BaseModel.metadata
 
 def get_url():
     """Get database URL from Flask app configuration."""
-    flask_app = create_app('development')
+    load_dotenv()
+    env_name = os.getenv('FLASK_ENV', 'production')
+    flask_app = create_app(env_name)
     return flask_app.config['SQLALCHEMY_DATABASE_URI']
 
 
