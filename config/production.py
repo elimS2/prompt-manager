@@ -65,7 +65,10 @@ class ProductionConfig(BaseConfig):
     MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    ADMINS = ['admin@example.com']
+    # Use ADMINS from environment (inherits parsing from BaseConfig by default),
+    # do not hardcode here to avoid overriding .env
+    _ADMINS_ENV = os.getenv('ADMINS', '')
+    ADMINS = [email.strip().lower() for email in _ADMINS_ENV.split(',') if email.strip()]
     
     @staticmethod
     def init_app(app):
