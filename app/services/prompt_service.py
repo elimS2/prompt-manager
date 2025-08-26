@@ -210,10 +210,11 @@ class PromptService:
             Prompt instance or None
         """
         prompt = self.prompt_repo.get_by_id(id)
-        # Enforce ownership visibility for non-admin users
+        # Enforce ownership/public visibility for non-admin users
         if prompt and getattr(current_user, 'is_authenticated', False):
-            if getattr(current_user, 'role', '') != 'admin' and prompt.user_id not in (None, current_user.id):
-                return None
+            if getattr(current_user, 'role', '') != 'admin':
+                if not (prompt.user_id == current_user.id or getattr(prompt, 'is_public', False)):
+                    return None
         return prompt
     
     def get_prompts_by_filters(self, filters: Dict[str, Any]) -> List[Prompt]:
@@ -238,14 +239,13 @@ class PromptService:
         Returns:
             List of Prompt instances or paginated result dict
         """
-        # Privacy-first hotfix: Non-admins see only their own prompts.
-        # Public prompts will be added back after filter stabilization.
+        # Privacy: Non-admins see own prompts + public ones. Admins see all.
         if getattr(current_user, 'is_authenticated', False):
             if getattr(current_user, 'role', '') != 'admin':
-                filters['user_id'] = current_user.id
+                filters['or__'] = [('user_id', current_user.id), ('is_public', True)]
         else:
-            # Hide data for unauthenticated users
-            filters['user_id'] = -1
+            # Only public for unauthenticated (route is login_required anyway)
+            filters['is_public'] = True
 
         # Extract sorting parameters (not model fields)
         sort_by = filters.pop('sort_by', 'order')  # Default to order for drag & drop
