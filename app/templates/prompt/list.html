@@ -287,6 +287,16 @@
                                 </div>
 
                                 <div class="prompt-header-right d-flex align-items-center">
+                                    {# Tags first #}
+                                    {% if prompt.tags %}
+                                        <div class="prompt-tags-inline me-2">
+                                            {% for tag in prompt.tags %}
+                                                <span class="tag tag-inline" data-color="{{ tag.color }}">
+                                                    {{ tag.name }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                     <div class="prompt-actions-group" role="group">
                                     <button class="btn btn-sm btn-outline-primary copy-content-btn d-none" 
                                             data-content="{{ prompt.content|e }}"
@@ -341,7 +351,7 @@
                                         </form>
                                     {% endif %}
                                     </div>
-                                    <!-- Visibility indicator placed between actions and tags -->
+                                    <!-- Visibility indicator after actions -->
                                     <div class="ms-2" aria-label="Prompt visibility" data-bs-toggle="tooltip" 
                                          title="{% if prompt.is_public %}Public: visible to all users. Editable by owner/admin.{% else %}Private: visible only to you (and admins).{% endif %}">
                                         {% if prompt.is_public %}
@@ -350,16 +360,6 @@
                                             <span class="badge rounded-pill bg-secondary"><i class="bi bi-lock me-1"></i>Private</span>
                                         {% endif %}
                                     </div>
-                                    <!-- Tags positioned after visibility indicator for clarity -->
-                                    {% if prompt.tags %}
-                                        <div class="prompt-tags-inline ms-2">
-                                            {% for tag in prompt.tags %}
-                                                <span class="tag tag-inline" data-color="{{ tag.color }}">
-                                                    {{ tag.name }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
                                 </div>
                             </div>
                             
