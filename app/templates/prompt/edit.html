@@ -73,6 +73,15 @@
                             Active (visible in lists and searches)
                         </label>
                     </div>
+
+                    <!-- Visibility -->
+                    <div class="mb-4">
+                        <label for="is_public" class="form-label theme-text">Visibility</label>
+                        <select id="is_public" name="is_public" class="form-select theme-transition">
+                            <option value="false" {% if not prompt.is_public %}selected{% endif %}>Private (visible only to you)</option>
+                            <option value="true" {% if prompt.is_public %}selected{% endif %}>Public (visible to all; only owner can edit)</option>
+                        </select>
+                    </div>
                     
                     <!-- Version History Note -->
                     <div class="alert alert-info theme-transition" role="alert">

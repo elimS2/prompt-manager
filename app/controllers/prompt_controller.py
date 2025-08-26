@@ -124,6 +124,10 @@ def create():
                 data['is_active'] = True
             else:
                 data['is_active'] = False
+
+            # Publish checkbox
+            is_public = request.form.get('is_public')
+            data['is_public'] = (is_public == 'true')
             
             # Create prompt
             prompt = prompt_service.create_prompt(data)
@@ -168,6 +172,11 @@ def edit(id):
     if not prompt:
         flash('Prompt not found', 'error')
         return redirect(url_for('prompt.index'))
+    # Permission: only owner or admin can edit; public prompts are read-only for others
+    from flask_login import current_user
+    if getattr(current_user, 'role', '') != 'admin' and prompt.user_id != getattr(current_user, 'id', None):
+        flash('You do not have permission to edit this prompt', 'error')
+        return redirect(url_for('prompt.view', id=id))
     
     if request.method == 'POST':
         try:
@@ -186,6 +195,11 @@ def edit(id):
                 data['is_active'] = True
             else:
                 data['is_active'] = False
+
+            # Publish checkbox
+            if 'is_public' in request.form:
+                is_public = request.form.get('is_public')
+                data['is_public'] = (is_public == 'true')
             
             # Update prompt
             prompt = prompt_service.update_prompt(id, data)
@@ -212,6 +226,15 @@ def edit(id):
 @BaseController.handle_service_error
 def delete(id):
     """Delete a prompt (soft delete)."""
+    # Permission: only owner or admin can delete
+    from flask_login import current_user
+    p = prompt_service.get_prompt(id)
+    if not p:
+        flash('Prompt not found', 'error')
+        return redirect(url_for('prompt.index'))
+    if getattr(current_user, 'role', '') != 'admin' and p.user_id != getattr(current_user, 'id', None):
+        flash('You do not have permission to delete this prompt', 'error')
+        return redirect(url_for('prompt.view', id=id))
     success = prompt_service.delete_prompt(id, soft=True)
     
     if success:
@@ -260,6 +283,7 @@ def duplicate(id):
     new_title = request.form.get('title')
     
     try:
+        # Permission: owner or admin can duplicate; others can duplicate public prompts too (optional)
         new_prompt = prompt_service.duplicate_prompt(id, new_title)
         flash('Prompt duplicated successfully!', 'success')
         return redirect(url_for('prompt.view', id=new_prompt.id))

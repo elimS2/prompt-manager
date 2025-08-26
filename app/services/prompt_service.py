@@ -61,6 +61,7 @@ class PromptService:
             # Extract optional fields
             description = data.get('description', '').strip()
             is_active = data.get('is_active', True)
+            is_public = data.get('is_public', False)
             tag_names = data.get('tags', [])
             
             # Handle checkbox value for is_active
@@ -73,6 +74,7 @@ class PromptService:
                 content=content,
                 description=description,
                 is_active=is_active,
+                is_public=is_public,
                 user_id=(current_user.id if getattr(current_user, 'is_authenticated', False) else None)
             )
             
@@ -131,18 +133,22 @@ class PromptService:
         if 'description' in data:
             data['description'] = data['description'].strip()
         
-        # Handle boolean conversion for is_active
+        # Handle boolean conversion for is_active / is_public
         if 'is_active' in data:
             is_active = data['is_active']
             if isinstance(is_active, str):
                 data['is_active'] = is_active.lower() in ('true', '1', 'on', 'yes')
+        if 'is_public' in data:
+            is_public = data['is_public']
+            if isinstance(is_public, str):
+                data['is_public'] = is_public.lower() in ('true', '1', 'on', 'yes')
         
         # Handle tags separately
         tag_names = data.pop('tags', None)
         
         # Update prompt fields
         updated_fields = {k: v for k, v in data.items() 
-                         if k in ['title', 'content', 'description', 'is_active']}
+                         if k in ['title', 'content', 'description', 'is_active', 'is_public']}
         
         if updated_fields:
             prompt = self.prompt_repo.update(id, **updated_fields)
@@ -232,13 +238,16 @@ class PromptService:
         Returns:
             List of Prompt instances or paginated result dict
         """
-        # Enforce per-user visibility (admins see all)
+        # Enforce per-user visibility (admins see all). Non-admins see own + public.
         if getattr(current_user, 'is_authenticated', False):
             if getattr(current_user, 'role', '') != 'admin':
-                filters['user_id'] = current_user.id
+                # We'll post-filter after fetching when pagination isn't used; for paginated use repository filter
+                filters = {
+                    **filters,
+                    'or__': [('user_id', current_user.id), ('is_public', True)]
+                }
         else:
-            # not authenticated: no prompts
-            filters['user_id'] = -1
+            filters['is_public'] = True
 
         # Extract sorting parameters (not model fields)
         sort_by = filters.pop('sort_by', 'order')  # Default to order for drag & drop

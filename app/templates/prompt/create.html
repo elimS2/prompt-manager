@@ -74,6 +74,15 @@
                         <!-- Hidden input to ensure value is always sent -->
                         <input type="hidden" name="is_active_fallback" value="false">
                     </div>
+
+                    <!-- Visibility -->
+                    <div class="mb-4">
+                        <label for="is_public" class="form-label theme-text">Visibility</label>
+                        <select id="is_public" name="is_public" class="form-select theme-transition">
+                            <option value="false" selected>Private (visible only to you)</option>
+                            <option value="true">Public (visible to all; only you can edit)</option>
+                        </select>
+                    </div>
                     
                     <!-- Action Buttons -->
                     <div class="d-flex justify-content-between">

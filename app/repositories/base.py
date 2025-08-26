@@ -158,6 +158,14 @@ class BaseRepository(Generic[ModelType]):
                 # Handle ID filtering
                 if value:
                     query = query.filter(self.model.id.in_(value))
+            elif key == 'or__' and isinstance(value, list):
+                # OR list of (field, value) pairs
+                conditions = []
+                for field, v in value:
+                    if hasattr(self.model, field) and v is not None:
+                        conditions.append(getattr(self.model, field) == v)
+                if conditions:
+                    query = query.filter(or_(*conditions))
             elif hasattr(self.model, key):
                 # Only add filters that are actual model fields and not None
                 if value is not None:

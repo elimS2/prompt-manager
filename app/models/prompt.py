@@ -24,6 +24,7 @@ class Prompt(BaseModel):
     description = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_public = db.Column(db.Boolean, default=False, nullable=False, index=True)
     order = db.Column(db.Integer, nullable=False, default=0, index=True)
     
     # Ownership
