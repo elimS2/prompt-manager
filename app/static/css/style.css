@@ -2818,3 +2818,13 @@ pre {
 .actions-bar > * {
     margin-right: 0 !important;
 }
+
+/* Tag Cloud: ensure readable text on colored tags in dark theme */
+[data-theme="dark"] .tag-cloud-item {
+    color: var(--text-inverse) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .tag-cloud-item:hover {
+    color: var(--text-inverse) !important;
+}
