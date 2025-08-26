@@ -46,6 +46,9 @@
                 <div class="mt-4 theme-text-secondary small">
                     <p class="mb-1">Created: {{ prompt.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                     <p class="mb-0">Updated: {{ prompt.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    {% if prompt.owner %}
+                    <p class="mb-0">Author: {{ prompt.owner.email }}</p>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-footer theme-border border-top">
