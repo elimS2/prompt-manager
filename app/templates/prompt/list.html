@@ -285,7 +285,16 @@
                                         </h5>
                                     </label>
                                 </div>
-                                <div class="prompt-header-right">
+
+                                <div class="prompt-header-right d-flex align-items-center">
+                                    {# Author mini-indicator: show avatar with tooltip email #}
+                                    {% if prompt.owner and (not current_user.is_authenticated or prompt.owner.id != current_user.id) %}
+                                        <div class="me-2" data-bs-toggle="tooltip" title="{{ prompt.owner.email }}">
+                                            <div class="author-avatar-mini" aria-label="Author avatar">
+                                                {{ (prompt.owner.name or prompt.owner.email)[:2]|upper }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                     <!-- Tags positioned near action buttons -->
                                     {% if prompt.tags %}
                                         <div class="prompt-tags-inline me-2">
@@ -602,6 +611,22 @@
         padding: 0.0625rem 0.125rem;
         font-size: 0.5rem;
         line-height: 1;
+    }
+
+    /* Mini author avatar */
+    .author-avatar-mini {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--theme-border);
+        color: var(--theme-text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid var(--theme-border);
     }
     
     /* Animation for selection feedback */
