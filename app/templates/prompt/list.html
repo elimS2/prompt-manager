@@ -64,7 +64,7 @@
                             <a href="#" 
                                class="tag tag-filter theme-transition {% if filters.tags and item.tag.name in filters.tags %}selected{% endif %}"
                                data-tag="{{ item.tag.name }}"
-                               style="background-color: {{ item.tag.color }}"
+                               data-color="{{ item.tag.color }}"
                                role="button"
                                tabindex="0"
                                aria-pressed="{{ 'true' if filters.tags and item.tag.name in filters.tags else 'false' }}">
@@ -87,7 +87,7 @@
         
         {% if favorite_id %}
             <script>
-                window.__FAVORITE_ID_FROM_SSR__ = {{ favorite_id | tojson }};
+                window.__FAVORITE_ID_FROM_SSR__ = JSON.parse('{{ favorite_id | tojson | safe }}');
             </script>
         {% endif %}
 
@@ -287,24 +287,6 @@
                                 </div>
 
                                 <div class="prompt-header-right d-flex align-items-center">
-                                    {# Author mini-indicator: show avatar with tooltip email #}
-                                    {% if prompt.owner and (not current_user.is_authenticated or prompt.owner.id != current_user.id) %}
-                                        <div class="me-2" data-bs-toggle="tooltip" title="{{ prompt.owner.email }}">
-                                            <div class="author-avatar-mini" aria-label="Author avatar">
-                                                {{ (prompt.owner.name or prompt.owner.email)[:2]|upper }}
-                                            </div>
-                                        </div>
-                                    {% endif %}
-                                    <!-- Tags positioned near action buttons -->
-                                    {% if prompt.tags %}
-                                        <div class="prompt-tags-inline me-2">
-                                            {% for tag in prompt.tags %}
-                                                <span class="tag tag-inline" style="background-color: {{ tag.color }}">
-                                                    {{ tag.name }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
                                     <div class="prompt-actions-group" role="group">
                                     <button class="btn btn-sm btn-outline-primary copy-content-btn d-none" 
                                             data-content="{{ prompt.content|e }}"
@@ -359,6 +341,25 @@
                                         </form>
                                     {% endif %}
                                     </div>
+                                    <!-- Visibility indicator placed between actions and tags -->
+                                    <div class="ms-2" aria-label="Prompt visibility" data-bs-toggle="tooltip" 
+                                         title="{% if prompt.is_public %}Public: visible to all users. Editable by owner/admin.{% else %}Private: visible only to you (and admins).{% endif %}">
+                                        {% if prompt.is_public %}
+                                            <span class="badge rounded-pill bg-success"><i class="bi bi-globe2 me-1"></i>Public</span>
+                                        {% else %}
+                                            <span class="badge rounded-pill bg-secondary"><i class="bi bi-lock me-1"></i>Private</span>
+                                        {% endif %}
+                                    </div>
+                                    <!-- Tags positioned after visibility indicator for clarity -->
+                                    {% if prompt.tags %}
+                                        <div class="prompt-tags-inline ms-2">
+                                            {% for tag in prompt.tags %}
+                                                <span class="tag tag-inline" data-color="{{ tag.color }}">
+                                                    {{ tag.name }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             
@@ -613,21 +614,7 @@
         line-height: 1;
     }
 
-    /* Mini author avatar */
-    .author-avatar-mini {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: var(--theme-border);
-        color: var(--theme-text);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        border: 1px solid var(--theme-border);
-    }
+    /* No extra CSS needed for visibility badge; using Bootstrap badges */
     
     /* Animation for selection feedback */
     .attached-prompt-card.selecting {
