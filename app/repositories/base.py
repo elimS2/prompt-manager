@@ -91,7 +91,18 @@ class BaseRepository(Generic[ModelType]):
             Dictionary with items, total, page, per_page, has_next, has_prev
         """
         query = self.model.query
-        
+
+        # Apply OR clause early to avoid being affected by later filter_by
+        or_clause = filters.pop('or__', None)
+        if or_clause:
+            from sqlalchemy import or_ as _or
+            conditions = []
+            for field, v in or_clause:
+                if hasattr(self.model, field) and v is not None:
+                    conditions.append(getattr(self.model, field) == v)
+            if conditions:
+                query = query.filter(_or(*conditions))
+
         if filters:
             query = self._apply_filters(query, filters)
         
