@@ -355,9 +355,13 @@
                                     <div class="ms-2" aria-label="Prompt visibility" data-bs-toggle="tooltip" 
                                          title="{% if prompt.is_public %}Public: visible to all users. Editable by owner/admin.{% else %}Private: visible only to you (and admins).{% endif %}">
                                         {% if prompt.is_public %}
-                                            <span class="badge rounded-pill bg-success"><i class="bi bi-globe2 me-1"></i>Public</span>
+                                            <span class="btn btn-sm btn-outline-success" role="button" tabindex="0" aria-label="Public">
+                                                <i class="bi bi-globe2"></i>
+                                            </span>
                                         {% else %}
-                                            <span class="badge rounded-pill bg-secondary"><i class="bi bi-lock me-1"></i>Private</span>
+                                            <span class="btn btn-sm btn-outline-secondary" role="button" tabindex="0" aria-label="Private">
+                                                <i class="bi bi-lock"></i>
+                                            </span>
                                         {% endif %}
                                     </div>
                                 </div>
