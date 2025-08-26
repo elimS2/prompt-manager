@@ -253,7 +253,8 @@ class PromptRepository(BaseRepository[Prompt]):
             # Combine with tag search
             combined_query = base_query.union(tag_search)
             
-            # Apply other filters to combined query
+            # Apply other filters to combined query (e.g., ownership/public)
+            combined_query = self._apply_filters(combined_query, filters)
             if 'is_active' in filters and filters['is_active'] is not None:
                 combined_query = combined_query.filter(self.model.is_active == filters['is_active'])
             
@@ -368,6 +369,9 @@ class PromptRepository(BaseRepository[Prompt]):
         
         if 'created_before' in filters:
             query = query.filter(self.model.created_at <= filters['created_before'])
+        
+        # Apply remaining filters (e.g., ownership/public)
+        query = self._apply_filters(query, filters)
         
         # Apply sorting
         query = self._apply_sorting(query, sort_by, sort_order)
