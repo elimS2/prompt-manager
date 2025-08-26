@@ -238,16 +238,14 @@ class PromptService:
         Returns:
             List of Prompt instances or paginated result dict
         """
-        # Enforce per-user visibility (admins see all). Non-admins see own + public.
+        # Privacy-first hotfix: Non-admins see only their own prompts.
+        # Public prompts will be added back after filter stabilization.
         if getattr(current_user, 'is_authenticated', False):
             if getattr(current_user, 'role', '') != 'admin':
-                # We'll post-filter after fetching when pagination isn't used; for paginated use repository filter
-                filters = {
-                    **filters,
-                    'or__': [('user_id', current_user.id), ('is_public', True)]
-                }
+                filters['user_id'] = current_user.id
         else:
-            filters['is_public'] = True
+            # Hide data for unauthenticated users
+            filters['user_id'] = -1
 
         # Extract sorting parameters (not model fields)
         sort_by = filters.pop('sort_by', 'order')  # Default to order for drag & drop

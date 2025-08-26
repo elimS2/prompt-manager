@@ -79,7 +79,7 @@ POST /api/favorites
 PUT /api/favorites/{favorite_id}
 ```
 
-Body fields optional: `name`, `description`, `prompt_ids` (заменяет состав и порядок).
+Body fields optional: `name`, `description`, `prompt_ids` (replaces content and order).
 
 **Response:** 200 OK → `{ "message": "Favorite updated successfully", "favorite": { ... } }`
 
@@ -92,7 +92,7 @@ DELETE /api/favorites/{favorite_id}
 
 #### Deep-linking (SSR)
 
-Веб-страница `/prompts?favorite_id={id}` применяет избранное при загрузке и скрывает остальные карточки. Поддерживается также в клиентском JS.
+The web page `/prompts?favorite_id={id}` applies the favorite on load and hides other cards. Supported in client-side JS as well.
 
 #### List Prompts
 ```http

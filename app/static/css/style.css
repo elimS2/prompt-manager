@@ -2786,7 +2786,7 @@ pre {
 /* Actions bar buttons: enforce consistent height and vertical alignment */
 .actions-bar {
     flex-wrap: wrap;
-    gap: 0.25rem; /* единый горизонтальный/вертикальный зазор */
+    gap: 0.25rem; /* unified horizontal/vertical gap */
 }
 
 .actions-bar .btn,
@@ -2806,7 +2806,7 @@ pre {
     vertical-align: middle;
 }
 
-/* Единые отступы внутри группы и снаружи */
+/* Unified paddings inside/outside group */
 .actions-bar .btn-group {
     gap: 0.25rem;
 }
