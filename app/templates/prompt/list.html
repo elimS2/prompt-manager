@@ -355,7 +355,7 @@
                                     <div class="ms-2" aria-label="Prompt visibility" data-bs-toggle="tooltip" 
                                          title="{% if prompt.is_public %}Public: visible to all users. Editable by owner/admin.{% else %}Private: visible only to you (and admins).{% endif %}">
                                         {% if prompt.is_public %}
-                                            <span class="btn btn-sm {% if current_user.is_authenticated and prompt.owner and prompt.owner.id == current_user.id %}btn-outline-success{% else %}btn-outline-warning{% endif %}" role="button" tabindex="0" aria-label="Public">
+                                            <span class="btn btn-sm {% if current_user.is_authenticated and prompt.owner and prompt.owner.id == current_user.id %}visibility-indicator-owner{% else %}btn-outline-warning{% endif %}" role="button" tabindex="0" aria-label="Public">
                                                 <i class="bi bi-globe2"></i>
                                             </span>
                                         {% else %}

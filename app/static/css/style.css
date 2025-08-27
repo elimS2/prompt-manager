@@ -1591,6 +1591,18 @@ pre {
     transform: translateY(-1px);
 }
 
+/* Explicit green outline for visibility when current user is the owner */
+.visibility-indicator-owner {
+    color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.visibility-indicator-owner:hover {
+    color: var(--text-inverse);
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
 .restore-form {
     display: inline-block;
 }
